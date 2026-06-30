@@ -1,0 +1,443 @@
+
+openapi: 3.0.3
+info:
+  title: SuperEconomico API Cliente
+  version: 1.0.0
+  description: Endpoints usados por la app cliente de SuperEconomico con Supabase Auth y REST.
+
+servers:
+  - url: https://mvrlcbcydpubhovvrmvf.supabase.co
+    description: Supabase Produccion
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: apikey
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegistroRequest:
+      type: object
+      required:
+        - email
+        - password
+        - data
+      properties:
+        email:
+          type: string
+          example: cliente@correo.com
+        password:
+          type: string
+          example: "123456"
+        data:
+          type: object
+          properties:
+            nombre_completo:
+              type: string
+              example: Juan Perez
+            telefono:
+              type: string
+              example: "99999999"
+            direcciones:
+              type: array
+              items:
+                $ref: "#/components/schemas/DireccionRegistro"
+
+    DireccionRegistro:
+      type: object
+      properties:
+        etiqueta:
+          type: string
+          example: Casa
+        direccion:
+          type: string
+          example: Colonia Centro, casa 10
+        latitud:
+          type: number
+          format: double
+          example: 14.0818
+        longitud:
+          type: number
+          format: double
+          example: -87.2068
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: cliente@correo.com
+        password:
+          type: string
+          example: "123456"
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+        refresh_token:
+          type: string
+        user:
+          type: object
+
+    VerificarOtpRequest:
+      type: object
+      required:
+        - email
+        - token
+        - type
+      properties:
+        email:
+          type: string
+          example: cliente@correo.com
+        token:
+          type: string
+          example: "123456"
+        type:
+          type: string
+          example: signup
+
+    RecuperarContrasenaRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          example: cliente@correo.com
+
+    ActualizarContrasenaRequest:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+          example: nuevaContrasena123
+
+    Producto:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: Corona Six Pack
+        descripcion:
+          type: string
+          example: 2 unidades
+        precio:
+          type: number
+          example: 800
+        esta_activo:
+          type: boolean
+          example: true
+
+    Perfil:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        nombre_completo:
+          type: string
+        telefono:
+          type: string
+        rol:
+          type: string
+          example: cliente
+
+    Direccion:
+      type: object
+      properties:
+        id:
+          type: integer
+        perfil_id:
+          type: string
+          format: uuid
+        etiqueta:
+          type: string
+        direccion_texto:
+          type: string
+        latitud:
+          type: number
+        longitud:
+          type: number
+        es_principal:
+          type: boolean
+
+    LogErrorRequest:
+      type: object
+      properties:
+        pantalla:
+          type: string
+        funcion:
+          type: string
+        mensaje:
+          type: string
+        detalle:
+          type: string
+
+paths:
+  /auth/v1/signup:
+    post:
+      summary: Crear cuenta de cliente
+      tags:
+        - Autenticacion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistroRequest"
+      responses:
+        "200":
+          description: Cuenta creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Solicitud invalida
+
+  /auth/v1/token:
+    post:
+      summary: Iniciar sesion
+      tags:
+        - Autenticacion
+      parameters:
+        - in: query
+          name: grant_type
+          required: true
+          schema:
+            type: string
+            example: password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Sesion iniciada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Credenciales invalidas
+
+  /auth/v1/verify:
+    post:
+      summary: Verificar codigo OTP
+      tags:
+        - Autenticacion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerificarOtpRequest"
+      responses:
+        "200":
+          description: Codigo verificado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Codigo invalido
+
+  /auth/v1/recover:
+    post:
+      summary: Enviar correo de recuperacion de contrasena
+      tags:
+        - Autenticacion
+      parameters:
+        - in: query
+          name: redirect_to
+          required: false
+          schema:
+            type: string
+            example: supereconomico://reset-password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecuperarContrasenaRequest"
+      responses:
+        "200":
+          description: Correo enviado
+        "400":
+          description: No se pudo enviar el correo
+
+  /auth/v1/user:
+    put:
+      summary: Actualizar contrasena del usuario autenticado
+      tags:
+        - Autenticacion
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActualizarContrasenaRequest"
+      responses:
+        "200":
+          description: Contrasena actualizada
+        "422":
+          description: Token invalido, enlace expirado o contrasena no permitida
+
+  /rest/v1/productos:
+    get:
+      summary: Listar productos activos
+      tags:
+        - Productos
+      parameters:
+        - in: query
+          name: esta_activo
+          schema:
+            type: string
+            example: eq.true
+        - in: query
+          name: select
+          schema:
+            type: string
+            example: "*"
+      responses:
+        "200":
+          description: Lista de productos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Producto"
+
+  /rest/v1/perfiles:
+    get:
+      summary: Obtener perfil del cliente
+      tags:
+        - Perfiles
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+            example: eq.uuid-del-usuario
+        - in: query
+          name: select
+          schema:
+            type: string
+            example: "*"
+      responses:
+        "200":
+          description: Perfil encontrado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Perfil"
+
+  /rest/v1/direcciones:
+    get:
+      summary: Listar direcciones del cliente
+      tags:
+        - Direcciones
+      parameters:
+        - in: query
+          name: perfil_id
+          schema:
+            type: string
+            example: eq.uuid-del-usuario
+        - in: query
+          name: select
+          schema:
+            type: string
+            example: "*"
+      responses:
+        "200":
+          description: Direcciones del cliente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Direccion"
+
+    post:
+      summary: Crear direccion del cliente
+      tags:
+        - Direcciones
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Direccion"
+      responses:
+        "201":
+          description: Direccion creada
+
+  /rest/v1/aceptaciones_login:
+    post:
+      summary: Registrar aceptacion al iniciar sesion
+      tags:
+        - Auditoria
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                usuario_id:
+                  type: string
+                  format: uuid
+                email:
+                  type: string
+      responses:
+        "201":
+          description: Aceptacion registrada
+
+  /rest/v1/logs_errores:
+    post:
+      summary: Registrar error remoto
+      tags:
+        - Logs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogErrorRequest"
+      responses:
+        "201":
+          description: Error registrado
