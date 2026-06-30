@@ -1,0 +1,86 @@
+package com.uth.supereconomico.presentation.ui;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.CheckBox;
+import android.widget.ImageButton;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
+import com.uth.supereconomico.MainActivity;
+import com.uth.supereconomico.R;
+import com.uth.supereconomico.presentation.viewmodel.LoginViewModel;
+import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
+import com.uth.supereconomico.utils.FormateadorTelefono;
+
+public class LoginActivity extends AppCompatActivity {
+
+    private TextInputEditText etEmail;
+    private TextInputEditText etPassword;
+    private CheckBox cbAcceptPolicy;
+    private MaterialButton btnLogin;
+    private MaterialButton btnGoToRegister;
+    private MaterialButton btnRecoverPassword;
+    private ImageButton btnBack;
+    private LoginViewModel viewModel;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_login);
+
+        ViewModelFactory factory = new ViewModelFactory();
+        viewModel = new ViewModelProvider(this, factory).get(LoginViewModel.class);
+
+        btnBack = findViewById(R.id.btnBack);
+        btnBack.setImageResource(R.drawable.ic_back_curved);
+
+        etEmail = findViewById(R.id.etEmail);
+        etPassword = findViewById(R.id.etPassword);
+        FormateadorTelefono.aplicar(etEmail);
+        cbAcceptPolicy = findViewById(R.id.cbAcceptPolicyLogin);
+        btnLogin = findViewById(R.id.btnLogin);
+        btnGoToRegister = findViewById(R.id.btnGoToRegister);
+        btnRecoverPassword = findViewById(R.id.btnRecoverPassword);
+
+        btnBack.setOnClickListener(v -> finish());
+        btnLogin.setOnClickListener(v -> iniciarSesion());
+        btnGoToRegister.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
+        btnRecoverPassword.setOnClickListener(v -> startActivity(new Intent(this, ForgotPasswordActivity.class)));
+
+        observarViewModel();
+    }
+
+    private void observarViewModel() {
+        viewModel.user.observe(this, usuario -> {
+            Toast.makeText(LoginActivity.this, "Bienvenido, " + usuario.getNombreCompleto(), Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+            finishAffinity();
+        });
+
+        viewModel.error.observe(this, mensaje -> Toast.makeText(LoginActivity.this, mensaje, Toast.LENGTH_LONG).show());
+
+        viewModel.isLoading.observe(this, cargando -> btnLogin.setEnabled(!cargando));
+    }
+
+    private void iniciarSesion() {
+        String email = etEmail.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, getString(R.string.error_empty_fields), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!cbAcceptPolicy.isChecked()) {
+            Toast.makeText(this, getString(R.string.error_policy_not_accepted), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        viewModel.login(email, password);
+    }
+}

@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:orientation="vertical">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilLabel"
+        style="@style/Widget.SuperEconomico.CampoTexto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Etiqueta"
+        app:boxStrokeColor="@color/selector_borde_campo"
+        app:startIconDrawable="@drawable/icono_usuario"
+        app:startIconTint="@color/icono_cliente">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etLabel"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:inputType="text"
+            android:singleLine="true"
+            android:textColor="@color/text_field"
+            android:textColorHint="@color/texto_apagado"
+            android:textSize="16sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilAddress"
+        style="@style/Widget.SuperEconomico.CampoTexto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:hint="Direccion exacta"
+        app:boxStrokeColor="@color/selector_borde_campo"
+        app:startIconDrawable="@drawable/icono_ubicacion"
+        app:startIconTint="@color/icono_cliente">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etAddress"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:inputType="textPostalAddress"
+            android:singleLine="true"
+            android:textColor="@color/text_field"
+            android:textColorHint="@color/texto_apagado"
+            android:textSize="16sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRemove"
+            style="@style/Widget.SuperEconomico.BotonTexto"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Eliminar"
+            android:textAllCaps="false"
+            android:textColor="@color/error_red"
+            app:icon="@android:drawable/ic_menu_delete"
+            app:iconTint="@color/error_red" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSetLocation"
+            style="@style/Widget.SuperEconomico.BotonTexto"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:text="Fijar GPS"
+            android:textAllCaps="false"
+            android:textColor="@color/verde_supermercado"
+            app:icon="@drawable/icono_ubicacion"
+            app:iconTint="@color/verde_supermercado" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/contenedorEstadoUbicacion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_estado_ubicacion_lista"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:contentDescription="Ubicacion fijada"
+            android:src="@drawable/icono_check_ubicacion" />
+
+        <TextView
+            android:id="@+id/tvEstadoUbicacion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="Ubicacion fijada"
+            android:textColor="@color/verde_supermercado_oscuro"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>
+

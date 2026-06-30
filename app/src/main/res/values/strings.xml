@@ -1,0 +1,42 @@
+<resources>
+    <string name="app_name">SuperEconómico</string>
+
+    <!-- Welcome Screen -->
+    <string name="welcome_headline">Gana dinero comprando y\nentregando víveres</string>
+    <string name="welcome_subheadline">Únete a nuestro equipo de repartidores y empieza a ganar hoy mismo.</string>
+    <string name="login_action">Iniciar Sesión</string>
+    <string name="register_action">Registrarse</string>
+
+    <!-- Auth Screens -->
+    <string name="login_title">¡Bienvenido de nuevo!</string>
+    <string name="login_subtitle">Ingresa tus credenciales para acceder.</string>
+    <string name="register_title">Crea tu cuenta</string>
+    <string name="register_subtitle">Regístrate para empezar a recibir pedidos.</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_orders">Mis Pedidos</string>
+    <string name="nav_profile">Perfil</string>
+
+    <string name="email_hint">Correo electrónico</string>
+    <string name="phone_hint">Teléfono móvil</string>
+    <string name="address_hint">Dirección de entrega</string>
+    <string name="password_hint">Contraseña</string>
+    <string name="full_name_hint">Nombre completo</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="dont_have_account">¿No tienes una cuenta? Únete ahora</string>
+    <string name="already_have_account">¿Ya tienes una cuenta? Ingresa</string>
+
+    <!-- Privacy Policy -->
+    <string name="policy_accept_register">Acepto la política de privacidad y uso de GPS</string>
+    <string name="policy_accept_login">Acepto la política de privacidad y uso de GPS</string>
+    <string name="policy_read_link">Leer política de privacidad</string>
+    <string name="error_policy_not_accepted">Debes aceptar la política de privacidad para continuar.</string>
+    <string name="privacy_policy_title">Política de Privacidad y GPS</string>
+    <string name="privacy_policy_content">En SuperEconómico, valoramos tu privacidad. Al usar nuestra app, aceptas:\n\n1. Recopilación de datos: Nombre, teléfono y dirección para gestionar tus pedidos.\n2. Uso de GPS: Accedemos a tu ubicación en tiempo real para optimizar las rutas de entrega y asegurar que el repartidor llegue a tu destino con precisión.\n3. Seguridad: Tus datos están encriptados y protegidos según estándares industriales.\n4. No compartimos tu información con terceros para fines publicitarios.</string>
+
+    <!-- Error/Validation -->
+    <string name="error_empty_fields">Por favor, completa todos los campos.</string>
+    <string name="error_invalid_email">Correo electrónico no válido.</string>
+    <string name="error_auth_failed">Error de autenticación. Intenta de nuevo.</string>
+</resources>
