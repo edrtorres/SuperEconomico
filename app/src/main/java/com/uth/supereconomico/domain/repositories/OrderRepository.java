@@ -1,6 +1,6 @@
 package com.uth.supereconomico.domain.repositories;
 
-import com.uth.supereconomico.domain.entities.Pedido;
+import com.uth.supereconomico.data.remote.models.OrderRequest;
 import java.util.List;
 
 public interface OrderRepository {
@@ -9,9 +9,11 @@ public interface OrderRepository {
         void onError(String message);
     }
 
-    void placeOrder(Pedido pedido, Callback<Pedido> callback);
-    void getMyOrders(String usuarioId, Callback<List<Pedido>> callback);
-    void getAllActiveOrders(Callback<List<Pedido>> callback);
-    void updateOrderStatus(String pedidoId, Pedido.Estado estado, Callback<Void> callback);
-    void rateOrder(String pedidoId, int calificacion, Callback<Void> callback);
+    void createOrder(String perfilId, Long direccionId, String metodoPago, double total, List<OrderRequest.Item> items, Callback<Void> callback);
+    void getOrders(String perfilId, Callback<List<OrderRequest>> callback);
+    void deleteOrder(Long orderId, Callback<Void> callback);
+    void getOrderItems(Long orderId, Callback<List<OrderRequest.Item>> callback);
+    void updateItemQuantity(Long itemId, Integer newQuantity, Callback<Void> callback);
+    void deleteOrderItem(Long itemId, Callback<Void> callback);
+    void addItemToOrder(OrderRequest.Item item, Callback<Void> callback);
 }

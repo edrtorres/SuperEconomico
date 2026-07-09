@@ -27,32 +27,42 @@ public class AuthRepositoryImpl implements AuthRepository {
     }
 
     @Override
-    public void login(String email, String password, Callback<Usuario> callback) {
-        if (esTelefono(email)) {
-            resolverCorreoPorTelefono(email, new Callback<String>() {
+    public void login(String emailOrPhone, String password, Callback<Usuario> callback) {
+        // 1. Detectar si es teléfono (8 dígitos)
+        String limpio = emailOrPhone.replaceAll("[^0-9]", "");
+        if (limpio.length() == 8 && !emailOrPhone.contains("@")) {
+            // 2. Buscar el correo asociado al teléfono
+            supabaseApi.getPerfilPorTelefono("eq." + limpio, "email").enqueue(new retrofit2.Callback<List<UserDTO>>() {
                 @Override
-                public void onSuccess(String correo) {
-                    iniciarSesionConCorreo(correo, password, callback);
+                public void onResponse(Call<List<UserDTO>> call, Response<List<UserDTO>> response) {
+                    if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                        String correoReal = response.body().get(0).email;
+                        // 3. Intentar login con el correo encontrado
+                        iniciarSesionConCorreo(correoReal, password, callback);
+                    } else {
+                        callback.onError("No se encontró una cuenta con ese número de teléfono.");
+                    }
                 }
-
                 @Override
-                public void onError(String message) {
-                    callback.onError(message);
+                public void onFailure(Call<List<UserDTO>> call, Throwable t) {
+                    callback.onError("Error de conexión al verificar teléfono.");
                 }
             });
-            return;
+        } else {
+            // Es un correo, proceder normal
+            iniciarSesionConCorreo(emailOrPhone, password, callback);
         }
-
-        iniciarSesionConCorreo(email, password, callback);
     }
+
 
     private void iniciarSesionConCorreo(String email, String password, Callback<Usuario> callback) {
         authApi.login(new AuthApi.LoginRequest(email, password)).enqueue(new retrofit2.Callback<AuthApi.AuthResponse>() {
             @Override
             public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    SesionSupabase.guardarTokenAcceso(response.body().getAccessToken());
-                    fetchUserProfile(response.body().getUser().getId(), callback);
+                    AuthApi.AuthResponse auth = response.body();
+                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getUser().getId());
+                    fetchUserProfile(auth.getUser().getId(), callback);
                 } else {
                     String errorMsg = obtenerDetalleError(response, "Login fallido");
                     RemoteLogger.log("AuthRepositoryImpl", "login", errorMsg, null, null);
@@ -96,8 +106,9 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    SesionSupabase.guardarTokenAcceso(response.body().getAccessToken());
-                    fetchUserProfile(response.body().getUser().getId(), callback);
+                    AuthApi.AuthResponse auth = response.body();
+                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getUser().getId());
+                    fetchUserProfile(auth.getUser().getId(), callback);
                 } else {
                     callback.onError(obtenerDetalleError(response, "Codigo invalido"));
                 }
@@ -132,16 +143,21 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onResponse(Call<List<UserDTO>> call, Response<List<UserDTO>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    currentUser = response.body().get(0).toDomain();
-                    callback.onSuccess(currentUser);
+                    UserDTO dto = response.body().get(0);
+                    currentUser = dto.toDomain();
+                    
+                    // Asegurar que el ID se guarde en la sesión global
+                    SesionSupabase.guardarSesion(SesionSupabase.obtenerTokenAcceso(), dto.id);
+
+                    if (callback != null) callback.onSuccess(currentUser);
                 } else {
-                    callback.onError("No se pudo obtener el perfil");
+                    if (callback != null) callback.onError("No se pudo obtener el perfil");
                 }
             }
 
             @Override
             public void onFailure(Call<List<UserDTO>> call, Throwable t) {
-                callback.onError(t.getMessage());
+                if (callback != null) callback.onError(t.getMessage());
             }
         });
     }
@@ -248,8 +264,13 @@ public class AuthRepositoryImpl implements AuthRepository {
 
     @Override
     public void updatePassword(String newPassword, String accessToken, Callback<Void> callback) {
-        String authHeader = "Bearer " + accessToken;
-        SesionSupabase.guardarTokenAcceso(accessToken);
+        String token = (accessToken != null) ? accessToken : SesionSupabase.obtenerTokenAcceso();
+        if (token == null) {
+            callback.onError("No hay una sesión válida para cambiar la contraseña");
+            return;
+        }
+
+        String authHeader = "Bearer " + token;
         authApi.updateUser(authHeader, new AuthApi.UpdateUserRequest(newPassword)).enqueue(new retrofit2.Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
@@ -319,6 +340,167 @@ public class AuthRepositoryImpl implements AuthRepository {
     }
 
     @Override
+    public void updateProfile(String id, String nombreCompleto, String telefono, String direccion, String descripcion, String avatarUrl, Callback<Void> callback) {
+        UserDTO updateRequest = new UserDTO();
+        updateRequest.nombreCompleto = nombreCompleto;
+        updateRequest.telefono = telefono;
+        updateRequest.direccion = direccion;
+        updateRequest.descripcion = descripcion;
+        updateRequest.avatarUrl = avatarUrl;
+
+        supabaseApi.updatePerfil("eq." + id, updateRequest).enqueue(new retrofit2.Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    // Actualizar usuario local si existe
+                    if (currentUser != null && currentUser.getId().equals(id)) {
+                        currentUser = new Usuario(id, currentUser.getEmail(), nombreCompleto, currentUser.getRol(), avatarUrl, descripcion, currentUser.getLatitud(), currentUser.getLongitud(), telefono, direccion);
+                    }
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError("Error al actualizar perfil: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void updateFcmToken(String id, String token, Callback<Void> callback) {
+        UserDTO updateRequest = new UserDTO();
+        updateRequest.fcmToken = token;
+
+        supabaseApi.updatePerfil("eq." + id, updateRequest).enqueue(new retrofit2.Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError("Error al actualizar token: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void getAddresses(String perfilId, Callback<List<DireccionRequest>> callback) {
+        supabaseApi.getDirecciones("eq." + perfilId, "*").enqueue(new retrofit2.Callback<List<DireccionRequest>>() {
+            @Override
+            public void onResponse(Call<List<DireccionRequest>> call, Response<List<DireccionRequest>> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Error al obtener direcciones: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<DireccionRequest>> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void addAddress(DireccionRequest address, Callback<Void> callback) {
+        supabaseApi.insertDireccion(address).enqueue(new retrofit2.Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError("Error al agregar dirección: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void deleteAddress(long addressId, Callback<Void> callback) {
+        supabaseApi.deleteDireccion("eq." + addressId).enqueue(new retrofit2.Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    callback.onSuccess(null);
+                } else {
+                    callback.onError("Error al eliminar dirección: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void getPaymentMethods(String perfilId, Callback<List<com.uth.supereconomico.domain.entities.MetodoPago>> callback) {
+        supabaseApi.getMetodosPago("eq." + perfilId, "*").enqueue(new retrofit2.Callback<List<com.uth.supereconomico.data.remote.models.MetodoPagoDTO>>() {
+            @Override
+            public void onResponse(Call<List<com.uth.supereconomico.data.remote.models.MetodoPagoDTO>> call, Response<List<com.uth.supereconomico.data.remote.models.MetodoPagoDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    java.util.List<com.uth.supereconomico.domain.entities.MetodoPago> list = new java.util.ArrayList<>();
+                    for (com.uth.supereconomico.data.remote.models.MetodoPagoDTO dto : response.body()) {
+                        list.add(dto.toDomain());
+                    }
+                    callback.onSuccess(list);
+                } else {
+                    callback.onError("Error al obtener métodos de pago: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(Call<List<com.uth.supereconomico.data.remote.models.MetodoPagoDTO>> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void addPaymentMethod(com.uth.supereconomico.data.remote.models.MetodoPagoDTO method, Callback<Void> callback) {
+        supabaseApi.insertMetodoPago(method).enqueue(new retrofit2.Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) callback.onSuccess(null);
+                else callback.onError("Error al agregar método de pago: " + response.code());
+            }
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void deletePaymentMethod(long methodId, Callback<Void> callback) {
+        supabaseApi.deleteMetodoPago("eq." + methodId).enqueue(new retrofit2.Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) callback.onSuccess(null);
+                else callback.onError("Error al eliminar método de pago: " + response.code());
+            }
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    @Override
     public void logout() {
         SesionSupabase.cerrarSesion();
         currentUser = null;
@@ -326,6 +508,15 @@ public class AuthRepositoryImpl implements AuthRepository {
 
     @Override
     public Usuario getCurrentUser() {
+        if (currentUser == null && SesionSupabase.haySesionActiva()) {
+            String id = SesionSupabase.obtenerIdUsuario();
+            if (id != null) {
+                // Sincrónico para el primer llamado si es necesario, 
+                // pero mejor disparar una carga asíncrona y devolver null por ahora
+                // para que el ViewModel reintente o observe.
+                fetchUserProfile(id, null);
+            }
+        }
         return currentUser;
     }
 }

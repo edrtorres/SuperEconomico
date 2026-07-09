@@ -53,8 +53,21 @@ public class SeleccionarUbicacionActivity extends AppCompatActivity {
     private void prepararMapa() {
         webViewMapa.getSettings().setJavaScriptEnabled(true);
         webViewMapa.getSettings().setDomStorageEnabled(true);
-        webViewMapa.getSettings().setUserAgentString("SuperEconomicoAndroid/1.0 contacto: soporte@supereconomico.local");
+        webViewMapa.getSettings().setDatabaseEnabled(true);
+        webViewMapa.getSettings().setGeolocationEnabled(true);
+        webViewMapa.getSettings().setLoadWithOverviewMode(true);
+        webViewMapa.getSettings().setUseWideViewPort(true);
+        webViewMapa.getSettings().setUserAgentString("Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.99 Mobile Safari/537.36");
         webViewMapa.addJavascriptInterface(new PuenteMapa(), "Android");
+        
+        // Evitar que el sistema abra enlaces fuera del WebView
+        webViewMapa.setWebViewClient(new android.webkit.WebViewClient());
+        webViewMapa.setWebChromeClient(new android.webkit.WebChromeClient() {
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, android.webkit.GeolocationPermissions.Callback callback) {
+                callback.invoke(origin, true, false);
+            }
+        });
     }
 
     private void prepararUbicacionActual() {
@@ -80,7 +93,7 @@ public class SeleccionarUbicacionActivity extends AppCompatActivity {
         latitudSeleccionada = latitud;
         longitudSeleccionada = longitud;
         webViewMapa.loadDataWithBaseURL(
-                "https://carto.com/",
+                "https://unpkg.com/",
                 crearHtmlMapa(latitud, longitud, zoom),
                 "text/html",
                 "UTF-8",
@@ -91,22 +104,33 @@ public class SeleccionarUbicacionActivity extends AppCompatActivity {
     private String crearHtmlMapa(double latitud, double longitud, int zoom) {
         return "<!doctype html>"
                 + "<html><head>"
-                + "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0'>"
+                + "<meta charset='utf-8'>"
+                + "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>"
                 + "<link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'>"
                 + "<script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>"
-                + "<style>html,body,#mapa{height:100%;margin:0;padding:0;} .leaflet-control-attribution{font-size:10px;}</style>"
+                + "<style>"
+                + "  html, body, #mapa { height: 100%; margin: 0; padding: 0; width: 100%; }"
+                + "  .leaflet-control-attribution { font-size: 8px; }"
+                + "</style>"
                 + "</head><body>"
                 + "<div id='mapa'></div>"
                 + "<script>"
-                + "var lat=" + latitud + ";"
-                + "var lng=" + longitud + ";"
-                + "var mapa=L.map('mapa').setView([lat,lng]," + zoom + ");"
-                + "L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd',attribution:'&copy; OpenStreetMap &copy; CARTO'}).addTo(mapa);"
-                + "var marcador=L.marker([lat,lng],{draggable:true}).addTo(mapa);"
-                + "function enviar(p){Android.seleccionarUbicacion(p.lat,p.lng);}"
-                + "marcador.on('dragend',function(){enviar(marcador.getLatLng());});"
-                + "mapa.on('click',function(e){marcador.setLatLng(e.latlng);enviar(e.latlng);});"
-                + "setTimeout(function(){mapa.invalidateSize();},300);"
+                + "  var lat = " + latitud + ";"
+                + "  var lng = " + longitud + ";"
+                + "  var mapa = L.map('mapa', { zoomControl: false }).setView([lat, lng], " + zoom + ");"
+                + "  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {"
+                + "    maxZoom: 19,"
+                + "    attribution: '&copy; OpenStreetMap'"
+                + "  }).addTo(mapa);"
+                + "  var marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);"
+                + "  function enviar(p) {"
+                + "    if(window.Android && Android.seleccionarUbicacion) {"
+                + "      Android.seleccionarUbicacion(p.lat, p.lng);"
+                + "    }"
+                + "  }"
+                + "  marcador.on('dragend', function(e) { enviar(marcador.getLatLng()); });"
+                + "  mapa.on('click', function(e) { marcador.setLatLng(e.latlng); enviar(e.latlng); });"
+                + "  setTimeout(function() { mapa.invalidateSize(); }, 500);"
                 + "</script>"
                 + "</body></html>";
     }

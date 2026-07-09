@@ -40,6 +40,10 @@ dependencies {
     implementation libs.material
     implementation libs.core.splashscreen
 
+    // Sincronización en segundo plano (Reemplazo de Firebase)
+    implementation "androidx.work:work-runtime:2.9.1"
+    implementation libs.ucrop
+
     // Networking
     implementation libs.retrofit
     implementation libs.retrofit.gson
@@ -52,6 +56,8 @@ dependencies {
     // Navigation
     implementation libs.navigation.fragment
     implementation libs.navigation.ui
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
+    implementation "androidx.dynamicanimation:dynamicanimation:1.0.0"
 
     // Google Maps & Location
     implementation libs.google.maps

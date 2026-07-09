@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-black"
+        android:text="Ajustes de la Cuenta"
+        android:textColor="@color/text_main"
+        android:textSize="20sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="24dp"
+        android:fontFamily="sans-serif-medium"
+        android:text="Actualiza tu información personal"
+        android:textColor="@color/text_muted"
+        android:textSize="14sp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.SuperEconomico.CampoTexto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Nombre Completo"
+        app:startIconDrawable="@android:drawable/ic_menu_edit">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etEditProfileName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.SuperEconomico.CampoTexto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Teléfono"
+        app:startIconDrawable="@drawable/icono_telefono">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etEditProfilePhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="phone" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.SuperEconomico.CampoTexto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Dirección"
+        app:startIconDrawable="@drawable/icono_ubicacion">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etEditProfileAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPostalAddress" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.SuperEconomico.CampoTexto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:hint="Sobre mí"
+        app:startIconDrawable="@android:drawable/ic_menu_info_details">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etEditProfileDesc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textMultiLine"
+            android:lines="2" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSaveProfileChanges"
+        style="@style/Widget.SuperEconomico.BotonPrincipal"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Guardar Cambios" />
+
+</LinearLayout>

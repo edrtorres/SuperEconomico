@@ -17,6 +17,16 @@ public interface AuthRepository {
     void recoverPassword(String email, Callback<Void> callback);
     void updatePassword(String newPassword, String accessToken, Callback<Void> callback);
     void actualizarContrasenaConTokenHash(String newPassword, String tokenHash, Callback<Void> callback);
+    void updateProfile(String id, String nombreCompleto, String telefono, String direccion, String descripcion, String avatarUrl, Callback<Void> callback);
+    void updateFcmToken(String id, String token, Callback<Void> callback);
+    void getAddresses(String perfilId, Callback<List<DireccionRequest>> callback);
+    void addAddress(DireccionRequest address, Callback<Void> callback);
+    void deleteAddress(long addressId, Callback<Void> callback);
+    
+    void getPaymentMethods(String perfilId, Callback<List<com.uth.supereconomico.domain.entities.MetodoPago>> callback);
+    void addPaymentMethod(com.uth.supereconomico.data.remote.models.MetodoPagoDTO method, Callback<Void> callback);
+    void deletePaymentMethod(long methodId, Callback<Void> callback);
+
     void logout();
     Usuario getCurrentUser();
 }

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">SuperEconómico</string>
+    <string name="app_name">El Economico</string>
 
     <!-- Welcome Screen -->
     <string name="welcome_headline">Gana dinero comprando y\nentregando víveres</string>
@@ -33,7 +33,7 @@
     <string name="policy_read_link">Leer política de privacidad</string>
     <string name="error_policy_not_accepted">Debes aceptar la política de privacidad para continuar.</string>
     <string name="privacy_policy_title">Política de Privacidad y GPS</string>
-    <string name="privacy_policy_content">En SuperEconómico, valoramos tu privacidad. Al usar nuestra app, aceptas:\n\n1. Recopilación de datos: Nombre, teléfono y dirección para gestionar tus pedidos.\n2. Uso de GPS: Accedemos a tu ubicación en tiempo real para optimizar las rutas de entrega y asegurar que el repartidor llegue a tu destino con precisión.\n3. Seguridad: Tus datos están encriptados y protegidos según estándares industriales.\n4. No compartimos tu información con terceros para fines publicitarios.</string>
+    <string name="privacy_policy_content">En El Economico, valoramos tu privacidad. Al usar nuestra app, aceptas:\n\n1. Recopilación de datos: Nombre, teléfono y dirección para gestionar tus pedidos.\n2. Uso de GPS: Accedemos a tu ubicación en tiempo real para optimizar las rutas de entrega y asegurar que el repartidor llegue a tu destino con precisión.\n3. Seguridad: Tus datos están encriptados y protegidos según estándares industriales.\n4. No compartimos tu información con terceros para fines publicitarios.</string>
 
     <!-- Error/Validation -->
     <string name="error_empty_fields">Por favor, completa todos los campos.</string>

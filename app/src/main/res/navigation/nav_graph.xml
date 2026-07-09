@@ -12,6 +12,12 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
+        android:id="@+id/navigation_cart"
+        android:name="com.uth.supereconomico.presentation.ui.fragments.CartFragment"
+        android:label="Mi Carrito"
+        tools:layout="@layout/fragment_cart" />
+
+    <fragment
         android:id="@+id/navigation_orders"
         android:name="com.uth.supereconomico.presentation.ui.fragments.OrdersFragment"
         android:label="Mis Pedidos"
@@ -22,4 +28,10 @@
         android:name="com.uth.supereconomico.presentation.ui.fragments.ProfileFragment"
         android:label="Perfil"
         tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/navigation_security"
+        android:name="com.uth.supereconomico.presentation.ui.fragments.SecurityFragment"
+        android:label="Seguridad"
+        tools:layout="@layout/fragment_security" />
 </navigation>

@@ -1,26 +1,259 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@color/surface_bg">
 
-    <TextView
-        android:id="@+id/tv_profile_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Mi Perfil"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Configura tu cuenta y direcciones"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_profile_title" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <!-- Green Header - MATCHING CART HEIGHT -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="110dp"
+                android:background="@drawable/bg_welcome_gradient"
+                android:paddingHorizontal="24dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivProfilePic"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_centerVertical="true"
+                    android:scaleType="centerCrop"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                    android:src="@android:drawable/ic_menu_gallery"
+                    app:strokeColor="@color/white"
+                    app:strokeWidth="2dp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="16dp"
+                    android:layout_toEndOf="@id/ivProfilePic"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mi Cuenta"
+                        android:textColor="#B3FFFFFF"
+                        android:textSize="11sp"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.1"
+                        android:fontFamily="sans-serif-black" />
+
+                    <TextView
+                        android:id="@+id/tvProfileNameHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="Hola, Usuario"
+                        android:textColor="@color/white"
+                        android:textSize="26sp" />
+
+                    <TextView
+                        android:id="@+id/tvProfileStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Cliente Premium"
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- Overlapping Cards -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="-20dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cvPaymentMethods"
+                    android:layout_width="0dp"
+                    android:layout_height="140dp"
+                    android:layout_margin="8dp"
+                    android:layout_weight="1"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="4dp"
+                    app:strokeColor="#E2E8F0"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@android:drawable/ic_menu_save"
+                            app:tint="@color/primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:fontFamily="sans-serif-bold"
+                            android:gravity="center"
+                            android:text="Métodos\nde Pago"
+                            android:textColor="@color/text_main"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cvMyAddresses"
+                    android:layout_width="0dp"
+                    android:layout_height="140dp"
+                    android:layout_margin="8dp"
+                    android:layout_weight="1"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="4dp"
+                    app:strokeColor="#E2E8F0"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <ImageView
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/icono_ubicacion"
+                            app:tint="#EF4444" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:fontFamily="sans-serif-bold"
+                            android:gravity="center"
+                            android:text="Mis\nDirecciones"
+                            android:textColor="@color/text_main"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+            <!-- Menu List -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="vertical"
+                android:paddingHorizontal="24dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnNotifSettings"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:gravity="start|center_vertical"
+                    android:text="Configuración de Notificaciones"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_main"
+                    android:textSize="15sp"
+                    app:icon="@android:drawable/ic_lock_silent_mode"
+                    app:iconPadding="16dp"
+                    app:iconTint="@color/primary" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#E2E8F0" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnHelpSupport"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:gravity="start|center_vertical"
+                    android:text="Ayuda y Soporte"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_main"
+                    android:textSize="15sp"
+                    app:icon="@android:drawable/stat_notify_chat"
+                    app:iconPadding="16dp"
+                    app:iconTint="@color/primary" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#E2E8F0" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAccountSettings"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:gravity="start|center_vertical"
+                    android:text="Ajustes de la Cuenta"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_main"
+                    android:textSize="15sp"
+                    app:icon="@android:drawable/ic_menu_manage"
+                    app:iconPadding="16dp"
+                    app:iconTint="@color/primary" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#E2E8F0" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSecurityProfile"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:gravity="start|center_vertical"
+                    android:text="Seguridad"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_main"
+                    android:textSize="15sp"
+                    app:icon="@android:drawable/ic_lock_idle_lock"
+                    app:iconPadding="16dp"
+                    app:iconTint="@color/primary" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#E2E8F0" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLogout"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:layout_marginTop="20dp"
+                    android:text="Cerrar Sesión"
+                    android:textAllCaps="false"
+                    android:textColor="#EF4444"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

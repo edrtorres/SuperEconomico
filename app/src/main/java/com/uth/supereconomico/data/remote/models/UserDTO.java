@@ -7,6 +7,7 @@ public class UserDTO {
     public String id;
     public String email;
     public String telefono;
+    public String direccion;
     
     @SerializedName("nombre_completo")
     public String nombreCompleto;
@@ -15,6 +16,9 @@ public class UserDTO {
     
     @SerializedName("avatar_url")
     public String avatarUrl;
+
+    @SerializedName("fcm_token")
+    public String fcmToken;
     
     public String descripcion;
     public Double latitud;
@@ -25,6 +29,6 @@ public class UserDTO {
         if ("encargado".equalsIgnoreCase(rol)) {
             domainRol = Usuario.Rol.ENCARGADO;
         }
-        return new Usuario(id, email, nombreCompleto, domainRol, avatarUrl, descripcion, latitud, longitud);
+        return new Usuario(id, email, nombreCompleto, domainRol, avatarUrl, descripcion, latitud, longitud, telefono, direccion);
     }
 }

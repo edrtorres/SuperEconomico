@@ -3,10 +3,20 @@ package com.uth.supereconomico.data.remote.models;
 import com.google.gson.annotations.SerializedName;
 
 public class DireccionRequest {
-    private String etiqueta;
-    private String direccion;
-    private Double latitud;
-    private Double longitud;
+    public Long id;
+    
+    @SerializedName("perfil_id")
+    public String perfilId;
+    
+    public String etiqueta;
+    
+    @SerializedName("direccion_texto")
+    public String direccion;
+    
+    public Double latitud;
+    public Double longitud;
+
+    public DireccionRequest() {}
 
     public DireccionRequest(String etiqueta, String direccion, Double latitud, Double longitud) {
         this.etiqueta = etiqueta;
@@ -14,9 +24,4 @@ public class DireccionRequest {
         this.latitud = latitud;
         this.longitud = longitud;
     }
-
-    public String getEtiqueta() { return etiqueta; }
-    public String getDireccion() { return direccion; }
-    public Double getLatitud() { return latitud; }
-    public Double getLongitud() { return longitud; }
 }

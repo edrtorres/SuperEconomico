@@ -5,6 +5,10 @@ import com.uth.supereconomico.domain.entities.Producto;
 
 public class ProductDTO {
     public long id;
+    
+    @SerializedName("categoria_id")
+    public Long categoriaId;
+
     public String nombre;
     public String descripcion;
     public double precio;
@@ -12,7 +16,13 @@ public class ProductDTO {
     @SerializedName("imagen_url")
     public String imagenUrl;
 
+    @SerializedName("es_oferta")
+    public boolean esOferta;
+
+    @SerializedName("precio_oferta")
+    public Double precioOferta;
+
     public Producto toDomain() {
-        return new Producto(id, nombre, descripcion, precio, imagenUrl);
+        return new Producto(id, nombre, descripcion, precio, imagenUrl, esOferta, precioOferta != null ? precioOferta : precio);
     }
 }

@@ -3,7 +3,6 @@ package com.uth.supereconomico.presentation.ui;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.CheckBox;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,7 +24,6 @@ public class LoginActivity extends AppCompatActivity {
     private MaterialButton btnLogin;
     private MaterialButton btnGoToRegister;
     private MaterialButton btnRecoverPassword;
-    private ImageButton btnBack;
     private LoginViewModel viewModel;
 
     @Override
@@ -36,9 +34,6 @@ public class LoginActivity extends AppCompatActivity {
         ViewModelFactory factory = new ViewModelFactory();
         viewModel = new ViewModelProvider(this, factory).get(LoginViewModel.class);
 
-        btnBack = findViewById(R.id.btnBack);
-        btnBack.setImageResource(R.drawable.ic_back_curved);
-
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         FormateadorTelefono.aplicar(etEmail);
@@ -47,7 +42,10 @@ public class LoginActivity extends AppCompatActivity {
         btnGoToRegister = findViewById(R.id.btnGoToRegister);
         btnRecoverPassword = findViewById(R.id.btnRecoverPassword);
 
-        btnBack.setOnClickListener(v -> finish());
+        // Recuperar estado del CheckBox
+        android.content.SharedPreferences prefs = getSharedPreferences("login_prefs", MODE_PRIVATE);
+        cbAcceptPolicy.setChecked(prefs.getBoolean("policy_accepted", false));
+
         btnLogin.setOnClickListener(v -> iniciarSesion());
         btnGoToRegister.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
         btnRecoverPassword.setOnClickListener(v -> startActivity(new Intent(this, ForgotPasswordActivity.class)));
@@ -80,6 +78,9 @@ public class LoginActivity extends AppCompatActivity {
             Toast.makeText(this, getString(R.string.error_policy_not_accepted), Toast.LENGTH_SHORT).show();
             return;
         }
+
+        // Guardar estado del CheckBox
+        getSharedPreferences("login_prefs", MODE_PRIVATE).edit().putBoolean("policy_accepted", true).apply();
 
         viewModel.login(email, password);
     }

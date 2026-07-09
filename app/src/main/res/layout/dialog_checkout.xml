@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Selecciona tu método de pago"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <RadioGroup
+        android:id="@+id/rgPaymentMethods"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:checkedButton="@id/rbCash">
+
+        <RadioButton
+            android:id="@+id/rbCash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Efectivo al recibir" />
+
+        <RadioButton
+            android:id="@+id/rbCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tarjeta de Crédito/Débito" />
+    </RadioGroup>
+
+</LinearLayout>

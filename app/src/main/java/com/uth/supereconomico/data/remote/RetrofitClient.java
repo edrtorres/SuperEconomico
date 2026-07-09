@@ -21,11 +21,15 @@ public class RetrofitClient {
                         .header("apikey", SupabaseConfig.ANON_KEY)
                         .method(original.method(), original.body());
 
-                // Si la solicitud ya tiene un header Authorization, no lo sobrescribimos.
                 if (original.header("Authorization") == null) {
-                    String token = SesionSupabase.haySesionActiva()
-                            ? SesionSupabase.obtenerTokenAcceso()
-                            : SupabaseConfig.ANON_KEY;
+                    String token = SupabaseConfig.ANON_KEY;
+                    String url = original.url().toString();
+                    
+                    // Si estamos logueados y NO es una petición de auth/lookup inicial, usamos el token de sesión
+                    if (SesionSupabase.haySesionActiva() && !url.contains("/auth/v1/token") && !url.contains("perfiles?telefono=")) {
+                        token = SesionSupabase.obtenerTokenAcceso();
+                    }
+                    
                     requestBuilder.header("Authorization", "Bearer " + token);
                 }
 

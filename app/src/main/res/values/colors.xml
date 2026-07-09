@@ -3,44 +3,38 @@
     <!-- Base -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="background_light">#F9FBF9</color>
 
-    <!-- Theme Primary (Verde Imagen 1) -->
-    <color name="primary">#2E7D32</color>
-    <color name="primary_dark">#1B3A24</color>
-    <color name="brand_green_label">#2E7D32</color>
-    <color name="brand_green_dark">#1B5E20</color>
-    <color name="title_green">#1B3A24</color>
-    <color name="label_green">#2E7D32</color>
+    <!-- FreshCart Premium Palette (Updated to RGB 49, 120, 50) -->
+    <color name="primary">#317832</color>
+    <color name="primary_dark">#1D421E</color>
+    <color name="accent_orange">#F97316</color>
+    <color name="surface_bg">#F1F5F9</color>
+    <color name="text_main">#1E293B</color>
+    <color name="text_muted">#64748B</color>
 
-    <!-- UI Elements -->
-    <color name="border_field">#DDE3DE</color>
-    <color name="icon_grey">#5D6B5E</color>
-    <color name="text_primary">#1B3A24</color>
-    <color name="text_secondary">#7F8C8D</color>
-    <color name="text_hint">#7F8C8D</color>
-    <color name="text_field">#1B3A24</color>
-    <color name="error_red">#D32F2F</color>
-
-    <!-- Legacy / Compatibility Aliases -->
-    <color name="surface_white">#FFFFFF</color>
-    <color name="brand_green">#2E7D32</color>
-    <color name="brand_green_title">#1B3D1B</color>
-    <color name="brand_green_light">#E8F5E9</color>
-    <color name="primary_container">#E8F5E9</color>
-    <color name="btn_signup_bg">#F2F4F7</color>
-
-    <!-- Cliente supermercado -->
-    <color name="fondo_cliente">#F9FBF9</color>
+    <!-- Legacy / Compatibility Aliases (Required for existing layouts) -->
+    <color name="verde_supermercado">#317832</color>
+    <color name="verde_supermercado_oscuro">#1D421E</color>
+    <color name="fondo_cliente">#F1F5F9</color>
     <color name="tarjeta_cliente">#FFFFFF</color>
-    <color name="verde_supermercado">#2E7D32</color>
-    <color name="verde_supermercado_oscuro">#1B3A24</color>
-    <color name="verde_suave">#EAF4EA</color>
+    <color name="verde_suave">#E8F5E9</color>
     <color name="amarillo_oferta">#F7C948</color>
-    <color name="borde_suave">#DDE3DE</color>
-    <color name="texto_apagado">#7F8C8D</color>
-    <color name="icono_cliente">#5D6B5E</color>
+    <color name="borde_suave">#E2E8F0</color>
+    <color name="texto_apagado">#64748B</color>
+    <color name="icono_cliente">#475569</color>
     <color name="fondo_campo_cliente">#FFFFFF</color>
-    <color name="borde_campo_cliente">#DDE3DE</color>
-    <color name="borde_campo_activo">#2E7D32</color>
+    <color name="borde_campo_cliente">#E2E8F0</color>
+    <color name="borde_campo_activo">#317832</color>
+
+    <!-- Added missing aliases to fix build errors -->
+    <color name="text_field">#1E293B</color>
+    <color name="text_primary">#1E293B</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="border_field">#E2E8F0</color>
+    <color name="brand_green">#317832</color>
+    <color name="brand_green_dark">#1D421E</color>
+
+    <color name="primary_container">#E8F5E9</color>
+    <color name="error_red">#EF4444</color>
+    <color name="text_hint">#94A3B8</color>
 </resources>

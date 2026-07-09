@@ -9,6 +9,7 @@ import com.uth.supereconomico.domain.usecases.LoginUseCase;
 import com.uth.supereconomico.domain.usecases.RecoverPasswordUseCase;
 import com.uth.supereconomico.domain.usecases.RegisterUseCase;
 import com.uth.supereconomico.domain.usecases.UpdatePasswordUseCase;
+import com.uth.supereconomico.domain.usecases.UpdateProfileUseCase;
 import com.uth.supereconomico.domain.usecases.VerifyOtpUseCase;
 
 public class ViewModelFactory implements ViewModelProvider.Factory {
@@ -25,7 +26,7 @@ public class ViewModelFactory implements ViewModelProvider.Factory {
             return (T) new RegisterViewModel(registerUseCase);
         } else if (modelClass.isAssignableFrom(HomeViewModel.class)) {
             GetProductsUseCase getProductsUseCase = Injection.provideGetProductsUseCase();
-            return (T) new HomeViewModel(getProductsUseCase);
+            return (T) new HomeViewModel(Injection.provideProductRepository(), getProductsUseCase);
         } else if (modelClass.isAssignableFrom(ForgotPasswordViewModel.class)) {
             RecoverPasswordUseCase recoverPasswordUseCase = Injection.provideRecoverPasswordUseCase();
             return (T) new ForgotPasswordViewModel(recoverPasswordUseCase);
@@ -35,6 +36,13 @@ public class ViewModelFactory implements ViewModelProvider.Factory {
         } else if (modelClass.isAssignableFrom(ResetPasswordViewModel.class)) {
             UpdatePasswordUseCase updatePasswordUseCase = Injection.provideUpdatePasswordUseCase();
             return (T) new ResetPasswordViewModel(updatePasswordUseCase);
+        } else if (modelClass.isAssignableFrom(ProfileViewModel.class)) {
+            UpdateProfileUseCase updateProfileUseCase = Injection.provideUpdateProfileUseCase();
+            return (T) new ProfileViewModel(Injection.provideAuthRepository(), updateProfileUseCase);
+        } else if (modelClass.isAssignableFrom(OrderViewModel.class)) {
+            return (T) new OrderViewModel(Injection.provideAuthRepository(), Injection.provideOrderRepository());
+        } else if (modelClass.isAssignableFrom(SecurityViewModel.class)) {
+            return (T) new SecurityViewModel(Injection.provideAuthRepository());
         }
         throw new IllegalArgumentException("Unknown ViewModel class: " + modelClass.getName());
     }

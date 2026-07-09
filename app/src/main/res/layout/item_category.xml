@@ -3,24 +3,27 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
+    android:layout_marginHorizontal="10dp"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="4dp">
+    android:paddingVertical="8dp">
 
     <com.google.android.material.card.MaterialCardView
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        app:cardCornerRadius="32dp"
-        app:cardElevation="0dp"
-        app:cardBackgroundColor="@color/brand_green_light"
-        app:strokeWidth="0dp">
+        android:id="@+id/cvCategoryIcon"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="4dp"
+        app:strokeWidth="1.5dp"
+        app:strokeColor="#1AFFFFFF"
+        app:cardBackgroundColor="@color/white">
 
         <ImageView
             android:id="@+id/iv_category_icon"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
             android:layout_gravity="center"
+            android:scaleType="centerInside"
             android:src="@android:drawable/ic_menu_gallery" />
     </com.google.android.material.card.MaterialCardView>
 
@@ -28,10 +31,10 @@
         android:id="@+id/tv_category_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:fontFamily="sans-serif-medium"
+        android:layout_marginTop="12dp"
+        android:fontFamily="sans-serif-black"
         android:text="Categoría"
-        android:textColor="@color/text_primary"
-        android:textSize="12sp" />
+        android:textColor="@color/text_main"
+        android:textSize="13sp" />
 
 </LinearLayout>

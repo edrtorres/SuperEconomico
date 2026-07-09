@@ -16,8 +16,8 @@ import com.uth.supereconomico.R;
 
 public class WelcomeActivity extends AppCompatActivity {
 
-    private static final long DURACION_SPLASH_MS = 8000L;
-    private static final long INTERVALO_PROGRESO_MS = 80L;
+    private static final long DURACION_SPLASH_MS = 2000L;
+    private static final long INTERVALO_PROGRESO_MS = 20L;
 
     private ProgressBar progresoSplash;
     private TextView tvPorcentajeSplash;
@@ -27,6 +27,9 @@ public class WelcomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+
+        // Inicializar sesión para verificar si hay un usuario logueado
+        com.uth.supereconomico.data.remote.SesionSupabase.inicializar(this);
 
         Window window = getWindow();
         window.getDecorView().setSystemUiVisibility(
@@ -65,7 +68,12 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
     private void abrirLogin() {
-        startActivity(new Intent(WelcomeActivity.this, LoginActivity.class));
+        if (com.uth.supereconomico.data.remote.SesionSupabase.haySesionActiva()) {
+            startActivity(new Intent(WelcomeActivity.this, com.uth.supereconomico.MainActivity.class));
+        } else {
+            startActivity(new Intent(WelcomeActivity.this, LoginActivity.class));
+        }
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
         finish();
     }
 
