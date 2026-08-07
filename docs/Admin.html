@@ -71,6 +71,95 @@
         .identity-pill { max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:10px 14px; border-radius:999px; color:var(--primary-dark); font-size:12px; font-weight:900; background:var(--bg); box-shadow:5px 5px 10px var(--dark),-5px -5px 10px var(--light); }
         .content-wrap { width:100%; max-width:1440px; margin:0 auto; padding:28px; }
         .table-shell { border-radius:18px!important; overflow-x:auto; }
+        .modal-overlay {
+            position:fixed;
+            inset:0;
+            z-index:50;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:24px;
+            background:rgba(15,23,42,.72);
+            backdrop-filter:blur(2.5px);
+        }
+        .modal-overlay.hidden { display:none!important; }
+        .modal-card {
+            width:100%;
+            border-radius:28px;
+            background:var(--bg);
+            border:1px solid rgba(255,255,255,.6);
+            box-shadow:8px 8px 16px rgba(31,41,55,.12), -6px -6px 12px rgba(255,255,255,.62);
+            overflow:hidden;
+        }
+        .modal-card.narrow { max-width:320px; }
+        .modal-card.medium { max-width:400px; }
+        .modal-card.wide { max-width:760px; }
+        .modal-header {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:16px;
+            padding:20px 22px 14px;
+            border-bottom:1px solid rgba(100,116,139,.16);
+        }
+        .modal-kicker {
+            margin:0;
+            color:var(--muted);
+            font-size:11px;
+            font-weight:900;
+            text-transform:uppercase;
+            letter-spacing:.12em;
+        }
+        .modal-title {
+            margin:4px 0 0;
+            color:var(--primary);
+            font-size:1.6rem;
+            line-height:1.1;
+            font-weight:900;
+        }
+        .modal-subtitle {
+            margin:4px 0 0;
+            color:#64748b;
+            font-size:.92rem;
+            font-weight:700;
+        }
+        .modal-close {
+            width:38px;
+            height:38px;
+            flex:0 0 auto;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:12px;
+            color:var(--primary-dark);
+            background:var(--bg);
+            box-shadow:5px 5px 10px var(--dark), -5px -5px 10px var(--light);
+        }
+        .modal-body {
+            padding:20px 22px 24px;
+        }
+        .modal-body.scroll { max-height:calc(92vh - 84px); overflow-y:auto; }
+        .modal-actions {
+            display:flex;
+            gap:12px;
+            margin-top:2px;
+        }
+        .modal-action {
+            flex:1;
+            min-height:46px;
+            border-radius:14px;
+            font-weight:900;
+        }
+        .modal-action.primary {
+            background:var(--primary);
+            color:#fff;
+            box-shadow:inset 3px 3px 7px rgba(0,0,0,.16), inset -3px -3px 7px rgba(255,255,255,.15);
+        }
+        .modal-action.secondary {
+            color:var(--ink);
+        }
+        .modal-stack { display:grid; gap:12px; }
+        .modal-divider { height:1px; background:rgba(100,116,139,.16); margin:18px 0; }
         .loader { border:3px solid #f3f3f3; border-top:3px solid var(--primary); border-radius:50%; width:24px; height:24px; animation:spin 1s linear infinite; }
         @keyframes spin { to { transform:rotate(360deg); } }
         @media (max-width: 900px) {
@@ -183,34 +272,114 @@
         </div>
     </div>
 
-    <div id="modal-cat" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-10"><h3 class="text-2xl font-black mb-6 text-primary">Categoría</h3><form id="cat-form" class="space-y-5"><input type="hidden" id="cat-id"><input type="text" id="cat-name" class="w-full p-4 rounded-2xl" placeholder="Nombre" required><input type="file" id="cat-file" accept="image/*" class="w-full text-xs"><div class="flex gap-3"><button type="submit" class="flex-1 bg-primary text-white py-4 rounded-2xl font-bold">Guardar</button><button type="button" onclick="closeMod()" class="flex-1 py-4 rounded-2xl font-bold">Cerrar</button></div></form></div>
-    </div>
-
-    <div id="modal-prod" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-[2.5rem] w-full max-w-md p-10 max-h-[90vh] overflow-y-auto"><h3 class="text-2xl font-black mb-6 text-primary text-center">Producto</h3><form id="prod-form" class="space-y-4"><input type="hidden" id="prod-id"><input type="text" id="prod-name" class="w-full p-4 rounded-2xl" placeholder="Nombre" required><textarea id="prod-desc" class="w-full p-4 rounded-2xl" rows="2" placeholder="Descripción"></textarea><select id="prod-cat" class="w-full p-4 rounded-2xl" required></select><input type="number" min="0" step="0.01" id="prod-price" class="w-full p-4 rounded-2xl" placeholder="Precio base" required><label class="flex items-center gap-3 p-4"><input type="checkbox" id="prod-is-offer" class="w-6 h-6"><span class="font-black">Oferta activa</span></label><input type="number" min="0" step="0.01" id="prod-price-offer" class="w-full p-4 rounded-2xl" placeholder="Precio de oferta"><input type="file" id="prod-file" accept="image/*" class="w-full text-xs"><div id="p-loader" class="hidden flex items-center gap-2"><div class="loader"></div><span>Guardando...</span></div><div class="flex gap-3"><button type="submit" class="flex-1 bg-primary text-white py-4 rounded-2xl font-bold">Guardar</button><button type="button" onclick="closeMod()" class="flex-1 py-4 rounded-2xl font-bold">Cerrar</button></div></form></div>
-    </div>
-
-    <div id="modal-user" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50"><div class="bg-white rounded-[2.5rem] w-full max-w-md p-9"><h3 class="text-2xl font-black mb-5 text-primary">Usuario</h3><form id="user-form" class="space-y-4"><input type="hidden" id="user-id"><input id="user-name" required class="w-full p-4 rounded-2xl" placeholder="Nombre completo"><input id="user-email" type="email" required class="w-full p-4 rounded-2xl" placeholder="Correo"><input id="user-phone" required class="w-full p-4 rounded-2xl" placeholder="Teléfono"><input id="user-password" type="password" minlength="6" class="w-full p-4 rounded-2xl" placeholder="Contraseña (mínimo 6)"><select id="user-role" class="w-full p-4 rounded-2xl"><option value="cliente">Cliente</option><option value="repartidor">Repartidor</option><option value="encargado">Usuario cPanel</option></select><div class="flex gap-3"><button class="flex-1 bg-primary text-white py-4 rounded-2xl font-bold">Guardar</button><button type="button" onclick="closeMod()" class="flex-1 py-4 rounded-2xl font-bold">Cerrar</button></div></form></div></div>
-
-    <div id="modal-order" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-[2rem] w-full max-w-6xl p-5 max-h-[94vh] overflow-hidden">
-            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+    <div id="modal-cat" class="modal-overlay hidden">
+        <div class="modal-card narrow">
+            <div class="modal-header">
                 <div>
-                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Detalle del pedido</p>
-                    <h3 id="order-detail-title" class="text-2xl font-black text-primary mt-1">Orden</h3>
-                    <p id="order-detail-client" class="text-sm font-bold text-slate-500 mt-1"></p>
+                    <p class="modal-kicker">Formulario</p>
+                    <h3 class="modal-title">Categoría</h3>
+                    <p class="modal-subtitle">Crea o ajusta una categoría del catálogo</p>
                 </div>
-                <button type="button" onclick="closeMod()" class="icon-btn" title="Cerrar" aria-label="Cerrar"><i data-lucide="x"></i></button>
+                <button type="button" onclick="closeMod()" class="modal-close" title="Cerrar" aria-label="Cerrar"><i data-lucide="x"></i></button>
             </div>
-            <div id="order-detail-meta" class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4"></div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div id="order-detail-address" class="neu rounded-3xl p-4"></div>
-                <div class="flex flex-col gap-4 min-h-0">
-                    <div id="order-detail-items" class="neu rounded-3xl p-3 order-detail-products"></div>
-                    <div class="neu rounded-3xl p-4 text-right">
-                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Total</p>
-                        <p id="order-detail-total" class="text-2xl font-black text-primary mt-1">L. 0.00</p>
+            <div class="modal-body">
+                <form id="cat-form" class="modal-stack">
+                    <input type="hidden" id="cat-id">
+                    <input type="text" id="cat-name" class="w-full p-4 rounded-2xl" placeholder="Nombre" required>
+                    <input type="file" id="cat-file" accept="image/*" class="w-full text-xs">
+                    <div class="modal-actions">
+                        <button type="submit" class="modal-action primary">Guardar</button>
+                        <button type="button" onclick="closeMod()" class="modal-action secondary">Cerrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-prod" class="modal-overlay hidden">
+        <div class="modal-card medium">
+            <div class="modal-header">
+                <div>
+                    <p class="modal-kicker">Formulario</p>
+                    <h3 class="modal-title">Producto</h3>
+                    <p class="modal-subtitle">Nombre, precio, oferta e imagen</p>
+                </div>
+                <button type="button" onclick="closeMod()" class="modal-close" title="Cerrar" aria-label="Cerrar"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body scroll">
+                <form id="prod-form" class="modal-stack">
+                    <input type="hidden" id="prod-id">
+                    <input type="text" id="prod-name" class="w-full p-4 rounded-2xl" placeholder="Nombre" required>
+                    <textarea id="prod-desc" class="w-full p-4 rounded-2xl" rows="2" placeholder="Descripción"></textarea>
+                    <select id="prod-cat" class="w-full p-4 rounded-2xl" required></select>
+                    <input type="number" min="0" step="0.01" id="prod-price" class="w-full p-4 rounded-2xl" placeholder="Precio base" required>
+                    <label class="flex items-center gap-3 p-4 rounded-2xl">
+                        <input type="checkbox" id="prod-is-offer" class="w-6 h-6">
+                        <span class="font-black">Oferta activa</span>
+                    </label>
+                    <input type="number" min="0" step="0.01" id="prod-price-offer" class="w-full p-4 rounded-2xl" placeholder="Precio de oferta">
+                    <input type="file" id="prod-file" accept="image/*" class="w-full text-xs">
+                    <div id="p-loader" class="hidden flex items-center gap-2"><div class="loader"></div><span>Guardando...</span></div>
+                    <div class="modal-actions">
+                        <button type="submit" class="modal-action primary">Guardar</button>
+                        <button type="button" onclick="closeMod()" class="modal-action secondary">Cerrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-user" class="modal-overlay hidden">
+        <div class="modal-card medium">
+            <div class="modal-header">
+                <div>
+                    <p class="modal-kicker">Formulario</p>
+                    <h3 class="modal-title">Usuario</h3>
+                    <p class="modal-subtitle">Datos de contacto y rol de acceso</p>
+                </div>
+                <button type="button" onclick="closeMod()" class="modal-close" title="Cerrar" aria-label="Cerrar"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="user-form" class="modal-stack">
+                    <input type="hidden" id="user-id">
+                    <input id="user-name" required class="w-full p-4 rounded-2xl" placeholder="Nombre completo">
+                    <input id="user-email" type="email" required class="w-full p-4 rounded-2xl" placeholder="Correo">
+                    <input id="user-phone" required class="w-full p-4 rounded-2xl" placeholder="Teléfono">
+                    <input id="user-password" type="password" minlength="6" class="w-full p-4 rounded-2xl" placeholder="Contraseña (mínimo 6)">
+                    <select id="user-role" class="w-full p-4 rounded-2xl">
+                        <option value="cliente">Cliente</option>
+                        <option value="repartidor">Repartidor</option>
+                        <option value="encargado">Usuario cPanel</option>
+                    </select>
+                    <div class="modal-actions">
+                        <button class="modal-action primary">Guardar</button>
+                        <button type="button" onclick="closeMod()" class="modal-action secondary">Cerrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-order" class="modal-overlay hidden">
+        <div class="modal-card wide">
+            <div class="modal-header">
+                <div>
+                    <p class="modal-kicker">Detalle</p>
+                    <h3 id="order-detail-title" class="modal-title">Orden</h3>
+                    <p id="order-detail-client" class="modal-subtitle"></p>
+                </div>
+                <button type="button" onclick="closeMod()" class="modal-close" title="Cerrar" aria-label="Cerrar"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body scroll">
+                <div id="order-detail-meta" class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div id="order-detail-address" class="neu rounded-3xl p-4"></div>
+                    <div class="flex flex-col gap-4 min-h-0">
+                        <div id="order-detail-items" class="neu rounded-3xl p-3 order-detail-products"></div>
+                        <div class="neu rounded-3xl p-4 text-right">
+                            <p class="text-xs font-black uppercase tracking-widest text-slate-500">Total</p>
+                            <p id="order-detail-total" class="text-2xl font-black text-primary mt-1">L. 0.00</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -656,7 +825,13 @@
     function newProduct() { document.getElementById('prod-form').reset(); document.getElementById('prod-id').value=''; openMod('modal-prod'); }
     function editProduct(id) { const item=products.find(value=>value.id===id); if(!item)return; document.getElementById('prod-id').value=item.id; document.getElementById('prod-name').value=item.nombre; document.getElementById('prod-desc').value=item.descripcion||''; document.getElementById('prod-cat').value=item.categoria_id; document.getElementById('prod-price').value=item.precio; document.getElementById('prod-is-offer').checked=!!item.es_oferta; document.getElementById('prod-price-offer').value=item.precio_oferta||''; openMod('modal-prod'); }
     function openMod(id) { document.getElementById(id).classList.remove('hidden'); }
-    function closeMod() { document.querySelectorAll('.fixed').forEach(modal=>modal.classList.add('hidden')); document.getElementById('p-loader').classList.add('hidden'); }
+    function closeMod() { document.querySelectorAll('.modal-overlay').forEach(modal=>modal.classList.add('hidden')); document.getElementById('p-loader').classList.add('hidden'); }
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', event => { if (event.target === modal) closeMod(); });
+    });
+    document.querySelectorAll('.modal-close').forEach(button => {
+        button.addEventListener('click', closeMod);
+    });
     function switchTab(tab, persist = true) {
         if (!adminTabs.includes(tab)) tab = 'dashboard';
         document.querySelectorAll('.tab-content').forEach(section => section.classList.add('hidden'));
