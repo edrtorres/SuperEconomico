@@ -99,6 +99,12 @@ components:
       properties:
         phone: {type: string, example: "99999999"}
         password: {type: string}
+        origin: {type: string, enum: [app_cliente, cpanel], example: app_cliente}
+
+    LogoutRequest:
+      type: object
+      properties:
+        origin: {type: string, enum: [app_cliente, cpanel], example: app_cliente}
 
     CrearPedidoSeguroRequest:
       type: object
@@ -254,6 +260,7 @@ paths:
               properties:
                 email: {type: string}
                 password: {type: string}
+                origin: {type: string, enum: [app_cliente, cpanel], example: app_cliente}
       responses:
         "200":
           description: Login exitoso con perfil y rol
@@ -358,16 +365,17 @@ paths:
       responses:
         "200": {description: Actualizada}
 
-  /auth/v1/logout:
+  /functions/v1/logout:
     post:
-      summary: Cerrar sesión local
+      summary: Cerrar sesion y registrar salida
+      description: Cierra la sesion autenticada y registra el evento logout en logs_accesos desde el backend.
       tags: [Autenticacion]
-      parameters:
-        - in: query
-          name: scope
-          schema: {type: string, default: local}
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/LogoutRequest"}
       responses:
-        "204": {description: Sesión cerrada}
+        "200": {description: Sesion cerrada y acceso registrado}
 
   /functions/v1/process-auth:
     post:
@@ -801,17 +809,6 @@ paths:
               schema:
                 type: array
                 items: {$ref: "#/components/schemas/AccessLog"}
-    post:
-      summary: Registrar ingreso o salida
-      description: Inserta el evento de acceso del usuario autenticado.
-      tags: [Soporte]
-      requestBody:
-        content:
-          application/json:
-            schema: {$ref: "#/components/schemas/AccessLog"}
-      responses:
-        "201": {description: Acceso registrado}
-
   /functions/v1/admin-users:
     post:
       summary: Administrar usuarios desde cPanel

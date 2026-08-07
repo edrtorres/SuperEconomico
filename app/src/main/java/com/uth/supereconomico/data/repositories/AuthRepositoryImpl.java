@@ -3,7 +3,6 @@ package com.uth.supereconomico.data.repositories;
 import com.uth.supereconomico.data.remote.AuthApi;
 import com.uth.supereconomico.data.remote.SesionSupabase;
 import com.uth.supereconomico.data.remote.SupabaseApi;
-import com.uth.supereconomico.data.remote.models.AccessLogRequest;
 import com.uth.supereconomico.data.remote.models.DireccionRequest;
 import com.uth.supereconomico.data.remote.models.UserDTO;
 import com.uth.supereconomico.domain.entities.Usuario;
@@ -54,7 +53,7 @@ public class AuthRepositoryImpl implements AuthRepository {
 
 
     private void iniciarSesionConCorreo(String email, String password, Callback<Usuario> callback) {
-        authApi.login(new AuthApi.LoginRequest(email, password)).enqueue(new retrofit2.Callback<AuthApi.AuthResponse>() {
+        authApi.login(new AuthApi.EdgeLoginRequest(email, password)).enqueue(new retrofit2.Callback<AuthApi.AuthResponse>() {
             @Override
             public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -152,7 +151,6 @@ public class AuthRepositoryImpl implements AuthRepository {
                 if (response.isSuccessful() && response.body() != null && response.body().getProfile() != null) {
                     UserDTO dto = response.body().getProfile();
                     if (!"cliente".equalsIgnoreCase(dto.rol)) {
-                        registrarAcceso(dto, "login");
                         SesionSupabase.cerrarSesion();
                         currentUser = null;
                         if (callback != null) callback.onError("Esta cuenta no pertenece a la app de clientes.");
@@ -160,7 +158,6 @@ public class AuthRepositoryImpl implements AuthRepository {
                     }
                     currentUser = dto.toDomain();
                     SesionSupabase.actualizarIdUsuario(dto.id);
-                    registrarAcceso(dto, "login");
                     if (callback != null) callback.onSuccess(currentUser);
                 } else {
                     SesionSupabase.cerrarSesion();
@@ -175,14 +172,6 @@ public class AuthRepositoryImpl implements AuthRepository {
                 currentUser = null;
                 if (callback != null) callback.onError(UserFriendlyError.fromThrowable(t));
             }
-        });
-    }
-
-    private void registrarAcceso(UserDTO user, String evento) {
-        if (user == null || user.id == null) return;
-        supabaseApi.logAccess(new AccessLogRequest(user.id, user.email, user.rol, "app_cliente", evento)).enqueue(new retrofit2.Callback<Void>() {
-            @Override public void onResponse(Call<Void> call, Response<Void> response) { }
-            @Override public void onFailure(Call<Void> call, Throwable t) { }
         });
     }
 
@@ -544,13 +533,6 @@ public class AuthRepositoryImpl implements AuthRepository {
     @Override
     public void logout() {
         String accessToken = SesionSupabase.obtenerTokenAcceso();
-        if (currentUser != null) {
-            UserDTO user = new UserDTO();
-            user.id = currentUser.getId();
-            user.email = currentUser.getEmail();
-            user.rol = currentUser.getRol().name().toLowerCase();
-            registrarAcceso(user, "logout");
-        }
         if (accessToken != null) {
             authApi.logout("Bearer " + accessToken).enqueue(new retrofit2.Callback<Void>() {
                 @Override public void onResponse(Call<Void> call, Response<Void> response) { }

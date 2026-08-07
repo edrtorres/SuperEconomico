@@ -175,8 +175,8 @@
             </section>
 
             <section id="sec-apis" class="tab-content hidden">
-                <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">APIs</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Documentación OpenAPI del proyecto</p></div><a href="./index.html?v=login-role-response" target="_blank" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Abrir aparte</a></div>
-                <iframe class="api-frame neu" src="./index.html?v=login-role-response" title="Documentación de APIs"></iframe>
+                <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">APIs</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Documentación OpenAPI del proyecto</p></div><a href="./index.html?v=backend-access-log" target="_blank" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Abrir aparte</a></div>
+                <iframe class="api-frame neu" src="./index.html?v=backend-access-log" title="Documentación de APIs"></iframe>
             </section>
                 </div>
             </main>
@@ -280,14 +280,24 @@
         return payload.profile || null;
     }
 
-    async function recordAccess(evento, profile = currentAdminProfile) {
-        if (!profile?.id) return;
-        try {
-            const { error } = await db.from('logs_accesos').insert({ usuario_id: profile.id, email: profile.email || '', rol: profile.rol || '', origen: 'cpanel', evento, user_agent: navigator.userAgent });
-            if (error) console.warn('No se pudo registrar acceso', error);
-        } catch (error) {
-            console.warn('No se pudo registrar acceso', error);
+    async function adminLogin(email, password) {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
+            method: 'POST',
+            headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, origin: 'cpanel' })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload.access_token || !payload.refresh_token) {
+            if (response.status === 404 || response.status === 405) {
+                const native = await db.auth.signInWithPassword({ email, password });
+                fail(native.error);
+                return native.data.session;
+            }
+            throw new Error(payload?.error || 'No se pudo iniciar sesion.');
         }
+        const { data, error } = await db.auth.setSession({ access_token: payload.access_token, refresh_token: payload.refresh_token });
+        fail(error);
+        return data.session;
     }
 
     async function requireAdmin(session, options = {}) {
@@ -306,7 +316,6 @@
             return false;
         }
         currentAdminProfile = data;
-        if (options.logAccess) await recordAccess('login', data);
         document.getElementById('admin-identity').textContent = data.nombre_completo || data.email;
         document.getElementById('login-view').classList.add('hidden');
         switchTab(getSavedTab(), false);
@@ -329,14 +338,13 @@
         const button = document.getElementById('login-button');
         button.disabled = true;
         try {
-            const { data, error } = await db.auth.signInWithPassword({ email:document.getElementById('admin-email').value.trim(), password:document.getElementById('admin-password').value });
-            fail(error);
-            await requireAdmin(data.session, { logAccess:true });
+            const session = await adminLogin(document.getElementById('admin-email').value.trim(), document.getElementById('admin-password').value);
+            await requireAdmin(session, { logAccess:false });
         } catch (error) { showLogin(error.message || 'No se pudo iniciar sesión.'); }
         finally { button.disabled = false; }
     });
 
-    async function logout() { await recordAccess('logout'); stopRealtime(); currentAdminProfile = null; await db.auth.signOut({ scope:'local' }); showLogin(); }
+    async function logout() { try { await db.functions.invoke('logout', { body:{ origin:'cpanel' } }); } catch (_) {} stopRealtime(); currentAdminProfile = null; await db.auth.signOut({ scope:'local' }); showLogin(); }
 
     function scheduleRealtimeReload(source) {
         realtimeLastEventAt = new Date();

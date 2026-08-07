@@ -17,7 +17,7 @@ public interface AuthApi {
     Call<AuthResponse> signUp(@Query("redirect_to") String redirectTo, @Body SignUpRequest request);
 
     @POST("functions/v1/login")
-    Call<AuthResponse> login(@Body LoginRequest request);
+    Call<AuthResponse> login(@Body EdgeLoginRequest request);
 
     @POST("auth/v1/token?grant_type=password")
     Call<AuthResponse> loginNative(@Body LoginRequest request);
@@ -37,7 +37,7 @@ public interface AuthApi {
     @PUT("auth/v1/user")
     Call<Void> updateUser(@Header("Authorization") String token, @Body UpdateUserRequest request);
 
-    @POST("auth/v1/logout?scope=local")
+    @POST("functions/v1/logout")
     Call<Void> logout(@Header("Authorization") String token);
 
     @POST("rest/v1/aceptaciones_login")
@@ -98,6 +98,15 @@ public interface AuthApi {
         }
     }
 
+    class EdgeLoginRequest extends LoginRequest {
+        String origin;
+
+        public EdgeLoginRequest(String email, String password) {
+            super(email, password);
+            this.origin = "app_cliente";
+        }
+    }
+
     class VerificarRecuperacionRequest {
         @SerializedName("token_hash")
         String tokenHash;
@@ -112,9 +121,11 @@ public interface AuthApi {
     class PhoneLoginRequest {
         String phone;
         String password;
+        String origin;
         public PhoneLoginRequest(String phone, String password) {
             this.phone = phone;
             this.password = password;
+            this.origin = "app_cliente";
         }
     }
 
