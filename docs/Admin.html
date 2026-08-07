@@ -179,6 +179,7 @@
     let adminErrors = [];
     let realtimeChannel = null;
     let realtimeReloadTimer = null;
+    let autoRefreshTimer = null;
 
     const fail = error => { if (error) throw error; };
     const safe = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -223,6 +224,7 @@
         document.getElementById('admin-view').classList.remove('hidden');
         await loadData();
         startRealtime();
+        startAutoRefresh();
         return true;
     }
 
@@ -246,15 +248,31 @@
         finally { button.disabled = false; }
     });
 
-    async function logout() { stopRealtime(); await db.auth.signOut({ scope:'local' }); showLogin(); }
+    async function logout() { stopRealtime(); stopAutoRefresh(); await db.auth.signOut({ scope:'local' }); showLogin(); }
 
     function scheduleRealtimeReload(source) {
         if (realtimeReloadTimer) clearTimeout(realtimeReloadTimer);
         realtimeReloadTimer = setTimeout(async () => {
             realtimeReloadTimer = null;
-            await loadData();
+            await loadData({ silent:true });
             setStatus(`${source}: panel actualizado automáticamente`);
         }, 600);
+    }
+
+    function startAutoRefresh() {
+        if (autoRefreshTimer) return;
+        autoRefreshTimer = setInterval(() => {
+            if (document.hidden || document.getElementById('admin-view').classList.contains('hidden')) return;
+            loadData({ silent:true });
+        }, 7000);
+        setStatus('Actualización automática activa');
+    }
+
+    function stopAutoRefresh() {
+        if (autoRefreshTimer) {
+            clearInterval(autoRefreshTimer);
+            autoRefreshTimer = null;
+        }
     }
 
     function startRealtime() {
@@ -303,7 +321,7 @@
         });
     }
 
-    async function loadData() {
+    async function loadData(options = {}) {
         try {
             const [catResult, productResult, orderResult, userResult] = await Promise.all([
                 db.from('categorias').select('*').order('nombre'),
@@ -314,7 +332,7 @@
             fail(catResult.error); fail(productResult.error); fail(orderResult.error); fail(userResult.error);
             categories = catResult.data || []; products = productResult.data || []; orders = orderResult.data || []; users = userResult.data?.users || [];
             renderOrders(); renderCategories(); renderProducts(); renderUsers(); renderDashboard(); renderLogs(); renderIcons();
-            setStatus('Datos sincronizados correctamente');
+            if (!options.silent) setStatus('Datos sincronizados correctamente');
         } catch (error) {
             logError('Carga de datos', error);
         }
