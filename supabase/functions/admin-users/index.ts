@@ -29,24 +29,41 @@ Deno.serve(async (req) => {
     if (action === "create") {
       const role = String(body.role ?? "cliente");
       if (!validRoles.has(role) || !body.email || !body.password || String(body.password).length < 6) return json({ error: "Datos de usuario inválidos" }, 400);
+      const email = String(body.email).trim().toLowerCase();
+      const name = String(body.name ?? "").trim();
+      const phone = String(body.phone ?? "").trim();
       const { data, error } = await service.auth.admin.createUser({
-        email: String(body.email).trim().toLowerCase(), password: String(body.password), email_confirm: true,
-        user_metadata: { nombre_completo: String(body.name ?? "").trim(), telefono: String(body.phone ?? "").trim() },
+        email, password: String(body.password), email_confirm: true,
+        user_metadata: { nombre_completo: name, telefono: phone },
         app_metadata: { app_role: role }
       });
       if (error) return json({ error: error.message }, 400);
+      const { error: profileError } = await service.from("perfiles").upsert({
+        id: data.user.id,
+        email,
+        nombre_completo: name,
+        telefono: phone,
+        rol: role
+      }, { onConflict: "id" });
+      if (profileError) return json({ error: profileError.message }, 400);
       return json({ user: data.user }, 201);
     }
     if (action === "update") {
       const id = String(body.id ?? "");
       const role = String(body.role ?? "");
       if (!id || !validRoles.has(role)) return json({ error: "Datos inválidos" }, 400);
-      const authChanges: Record<string, unknown> = { app_metadata: { app_role: role } };
-      if (body.email) authChanges.email = String(body.email).trim().toLowerCase();
+      const email = body.email ? String(body.email).trim().toLowerCase() : "";
+      const name = String(body.name ?? "").trim();
+      const phone = String(body.phone ?? "").trim();
+      const authChanges: Record<string, unknown> = {
+        app_metadata: { app_role: role },
+        user_metadata: { nombre_completo: name, telefono: phone }
+      };
+      if (email) authChanges.email = email;
       if (body.password) authChanges.password = String(body.password);
       const { error: authError } = await service.auth.admin.updateUserById(id, authChanges);
       if (authError) return json({ error: authError.message }, 400);
-      const { error } = await service.from("perfiles").update({ email: body.email, nombre_completo: body.name, telefono: body.phone, rol: role }).eq("id", id);
+      const { error } = await service.from("perfiles").upsert({ id, email, nombre_completo: name, telefono: phone, rol: role }, { onConflict: "id" });
       if (error) throw error;
       return json({ ok: true });
     }
