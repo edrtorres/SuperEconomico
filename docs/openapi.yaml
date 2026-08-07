@@ -184,7 +184,7 @@ paths:
   /auth/v1/signup:
     post:
       summary: Registro de cliente
-      tags: [Autenticación]
+      tags: [Autenticacion]
       requestBody:
         content:
           application/json:
@@ -195,7 +195,7 @@ paths:
   /auth/v1/token:
     post:
       summary: Login (Email/Teléfono + Contraseña)
-      tags: [Autenticación]
+      tags: [Autenticacion]
       parameters:
         - in: query
           name: grant_type
@@ -218,7 +218,7 @@ paths:
   /functions/v1/login-by-phone:
     post:
       summary: Login por teléfono y contraseña
-      tags: [AutenticaciÃ³n]
+      tags: [Autenticacion]
       requestBody:
         content:
           application/json:
@@ -233,7 +233,7 @@ paths:
   /auth/v1/verify:
     post:
       summary: Verificar OTP para Registro o Recuperación
-      tags: [Autenticación]
+      tags: [Autenticacion]
       requestBody:
         content:
           application/json:
@@ -244,7 +244,7 @@ paths:
   /auth/v1/recover:
     post:
       summary: Solicitar recuperación de contraseña
-      tags: [Autenticación]
+      tags: [Autenticacion]
       parameters:
         - in: query
           name: redirect_to
@@ -259,7 +259,7 @@ paths:
   /auth/v1/user:
     put:
       summary: Actualizar datos de usuario (Contraseña)
-      tags: [Autenticación]
+      tags: [Autenticacion]
       requestBody:
         content:
           application/json:
@@ -273,7 +273,7 @@ paths:
   /auth/v1/logout:
     post:
       summary: Cerrar sesión local
-      tags: [AutenticaciÃ³n]
+      tags: [Autenticacion]
       parameters:
         - in: query
           name: scope
@@ -284,7 +284,7 @@ paths:
   /functions/v1/process-auth:
     post:
       summary: Procesar flujo auxiliar de autenticación
-      tags: [AutenticaciÃ³n]
+      tags: [Autenticacion]
       requestBody:
         content:
           application/json:
@@ -295,7 +295,7 @@ paths:
   /functions/v1/process-signup:
     post:
       summary: Procesar registro auxiliar
-      tags: [AutenticaciÃ³n]
+      tags: [Autenticacion]
       requestBody:
         content:
           application/json:
@@ -306,7 +306,7 @@ paths:
   /rest/v1/aceptaciones_login:
     post:
       summary: Registrar aceptación de login para auditoría
-      tags: [Autenticación]
+      tags: [Autenticacion]
       requestBody:
         content:
           application/json:
@@ -347,7 +347,7 @@ paths:
   /rest/v1/categorias:
     get:
       summary: Listar categorías del catálogo
-      tags: [Catálogo]
+      tags: [Catalogo]
       parameters:
         - in: query
           name: select
@@ -390,7 +390,7 @@ paths:
   /rest/v1/productos:
     get:
       summary: Listar productos (Búsqueda y Filtros)
-      tags: [Catálogo]
+      tags: [Catalogo]
       parameters:
         - in: query
           name: select
