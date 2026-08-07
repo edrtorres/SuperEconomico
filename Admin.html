@@ -133,20 +133,15 @@
 
             <section id="sec-orders" class="tab-content hidden">
                 <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">Panel de despacho</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Pedidos de clientes</p></div><button onclick="loadData()" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Refrescar</button></div>
-                <div class="mb-4"><h3 class="text-xl font-black">Pedidos activos</h3><p class="text-xs font-bold uppercase tracking-widest text-slate-500">Pendientes, en preparación y en camino</p></div>
-                <div class="bg-white table-shell mb-8">
+                <div class="flex flex-wrap gap-3 mb-6" role="tablist" aria-label="Estados de pedidos">
+                    <button type="button" id="order-tab-active" class="order-tab bg-primary text-white px-5 py-3 rounded-2xl font-black text-xs" onclick="setOrderTab('active')">Activos <span id="count-orders-active">0</span></button>
+                    <button type="button" id="order-tab-delivered" class="order-tab neu px-5 py-3 rounded-2xl font-black text-xs text-slate-600" onclick="setOrderTab('delivered')">Entregados <span id="count-orders-delivered">0</span></button>
+                    <button type="button" id="order-tab-canceled" class="order-tab neu px-5 py-3 rounded-2xl font-black text-xs text-slate-600" onclick="setOrderTab('canceled')">Cancelados <span id="count-orders-canceled">0</span></button>
+                </div>
+                <div class="mb-4"><h3 id="orders-tab-title" class="text-xl font-black">Pedidos activos</h3><p id="orders-tab-subtitle" class="text-xs font-bold uppercase tracking-widest text-slate-500">Pendientes, en preparación y en camino</p></div>
+                <div class="bg-white table-shell">
                     <table class="w-full text-left"><thead><tr><th class="p-6">Orden / cliente</th><th class="p-6">Total</th><th class="p-6">Repartidor</th><th class="p-6">Estado</th></tr></thead><tbody id="table-orders"></tbody></table>
                     <div id="no-orders" class="hidden p-14 text-center text-slate-400 font-black">No hay pedidos activos</div>
-                </div>
-                <div class="mb-4"><h3 class="text-xl font-black">Pedidos entregados</h3><p class="text-xs font-bold uppercase tracking-widest text-slate-500">Historial de entregas completadas</p></div>
-                <div class="bg-white table-shell mb-8">
-                    <table class="w-full text-left"><thead><tr><th class="p-6">Orden / cliente</th><th class="p-6">Total</th><th class="p-6">Repartidor</th><th class="p-6">Estado</th></tr></thead><tbody id="table-orders-delivered"></tbody></table>
-                    <div id="no-orders-delivered" class="hidden p-14 text-center text-slate-400 font-black">No hay pedidos entregados</div>
-                </div>
-                <div class="mb-4"><h3 class="text-xl font-black">Pedidos cancelados</h3><p class="text-xs font-bold uppercase tracking-widest text-slate-500">Pedidos que no continuaron el despacho</p></div>
-                <div class="bg-white table-shell">
-                    <table class="w-full text-left"><thead><tr><th class="p-6">Orden / cliente</th><th class="p-6">Total</th><th class="p-6">Repartidor</th><th class="p-6">Estado</th></tr></thead><tbody id="table-orders-canceled"></tbody></table>
-                    <div id="no-orders-canceled" class="hidden p-14 text-center text-slate-400 font-black">No hay pedidos cancelados</div>
                 </div>
             </section>
 
@@ -213,6 +208,7 @@
     let products = [];
     let orders = [];
     let orderItems = [];
+    let currentOrderTab = 'active';
     let users = [];
     let adminErrors = [];
     let realtimeChannel = null;
@@ -407,17 +403,41 @@
     }
 
     function renderOrders() {
-        const activeOrders = orders.filter(order => !['entregado', 'cancelado'].includes(order.estado));
-        const deliveredOrders = orders.filter(order => order.estado === 'entregado');
-        const canceledOrders = orders.filter(order => order.estado === 'cancelado');
-        renderOrderGroup('table-orders', 'no-orders', activeOrders);
-        renderOrderGroup('table-orders-delivered', 'no-orders-delivered', deliveredOrders);
-        renderOrderGroup('table-orders-canceled', 'no-orders-canceled', canceledOrders);
+        const groups = {
+            active: orders.filter(order => !['entregado', 'cancelado'].includes(order.estado)),
+            delivered: orders.filter(order => order.estado === 'entregado'),
+            canceled: orders.filter(order => order.estado === 'cancelado')
+        };
+        document.getElementById('count-orders-active').textContent = groups.active.length;
+        document.getElementById('count-orders-delivered').textContent = groups.delivered.length;
+        document.getElementById('count-orders-canceled').textContent = groups.canceled.length;
+        const labels = {
+            active: ['Pedidos activos', 'Pendientes, en preparación y en camino', 'No hay pedidos activos'],
+            delivered: ['Pedidos entregados', 'Historial de entregas completadas', 'No hay pedidos entregados'],
+            canceled: ['Pedidos cancelados', 'Pedidos que no continuaron el despacho', 'No hay pedidos cancelados']
+        };
+        const selected = groups[currentOrderTab] ? currentOrderTab : 'active';
+        document.getElementById('orders-tab-title').textContent = labels[selected][0];
+        document.getElementById('orders-tab-subtitle').textContent = labels[selected][1];
+        document.getElementById('no-orders').textContent = labels[selected][2];
+        document.querySelectorAll('.order-tab').forEach(tab => {
+            const isActive = tab.id === `order-tab-${selected}`;
+            tab.classList.toggle('bg-primary', isActive);
+            tab.classList.toggle('text-white', isActive);
+            tab.classList.toggle('neu', !isActive);
+            tab.classList.toggle('text-slate-600', !isActive);
+        });
+        renderOrderGroup(groups[selected]);
     }
 
-    function renderOrderGroup(tableId, emptyId, group) {
-        const body = document.getElementById(tableId); body.replaceChildren();
-        document.getElementById(emptyId).classList.toggle('hidden', group.length > 0);
+    function setOrderTab(tab) {
+        currentOrderTab = tab;
+        renderOrders();
+    }
+
+    function renderOrderGroup(group) {
+        const body = document.getElementById('table-orders'); body.replaceChildren();
+        document.getElementById('no-orders').classList.toggle('hidden', group.length > 0);
         for (const order of group) {
             const row = document.createElement('tr');
             row.className = 'order-row';
