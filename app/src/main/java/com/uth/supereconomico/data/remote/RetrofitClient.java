@@ -12,8 +12,11 @@ public class RetrofitClient {
 
     public static Retrofit getClient() {
         if (retrofit == null) {
-            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor(message ->
+                    android.util.Log.d("HTTP", message));
+            logging.redactHeader("Authorization");
+            logging.redactHeader("apikey");
+            logging.setLevel(HttpLoggingInterceptor.Level.NONE);
 
             Interceptor authInterceptor = chain -> {
                 Request original = chain.request();
@@ -27,7 +30,8 @@ public class RetrofitClient {
                     
                     // Si estamos logueados y NO es una petición de auth/lookup inicial, usamos el token de sesión
                     if (SesionSupabase.haySesionActiva() && !url.contains("/auth/v1/token") && !url.contains("perfiles?telefono=")) {
-                        token = SesionSupabase.obtenerTokenAcceso();
+                        token = SesionSupabase.obtenerTokenValido();
+                        if (token == null) token = SupabaseConfig.ANON_KEY;
                     }
                     
                     requestBuilder.header("Authorization", "Bearer " + token);

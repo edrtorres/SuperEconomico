@@ -3,7 +3,7 @@ package com.uth.supereconomico.presentation.viewmodel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import com.uth.supereconomico.data.remote.models.OrderRequest;
+import com.uth.supereconomico.domain.entities.Pedido;
 import com.uth.supereconomico.domain.entities.Usuario;
 import com.uth.supereconomico.domain.repositories.AuthRepository;
 import com.uth.supereconomico.domain.repositories.OrderRepository;
@@ -31,49 +31,53 @@ public class OrderViewModel extends ViewModel {
         _cart.setValue(CartPersistence.loadCart());
     }
 
-    private final MutableLiveData<List<OrderRequest.Item>> _cart = new MutableLiveData<>(new ArrayList<>());
-    public LiveData<List<OrderRequest.Item>> cart = _cart;
+    private final MutableLiveData<List<Pedido.Item>> _cart = new MutableLiveData<>(new ArrayList<>());
+    public LiveData<List<Pedido.Item>> cart = _cart;
 
     public void addToCart(long productoId, int cantidad, double precioUnitario, String nombre, String imagenUrl) {
-        List<OrderRequest.Item> currentCart = _cart.getValue();
+        List<Pedido.Item> currentCart = _cart.getValue();
         if (currentCart == null) currentCart = new ArrayList<>();
-        
-        List<OrderRequest.Item> newCart = new ArrayList<>(currentCart);
-        
+
+        List<Pedido.Item> newCart = new ArrayList<>(currentCart);
+
         boolean found = false;
-        for (OrderRequest.Item item : newCart) {
-            if (item.productoId != null && item.productoId == productoId) {
-                item.cantidad += cantidad;
+        for (Pedido.Item item : newCart) {
+            if (item.getProductoId() != null && item.getProductoId() == productoId) {
+                // Reemplazamos el item con uno nuevo con la cantidad actualizada ya que son inmutables
+                newCart.remove(item);
+                newCart.add(new Pedido.Item(item.getId(), item.getPedidoId(), item.getProductoId(),
+                        item.getCantidad() + cantidad, item.getPrecioUnitario(), item.getNombre(), item.getImagenUrl()));
                 found = true;
                 break;
             }
         }
-        
+
         if (!found) {
-            newCart.add(new OrderRequest.Item(productoId, cantidad, precioUnitario, nombre, imagenUrl));
+            newCart.add(new Pedido.Item(null, null, productoId, cantidad, precioUnitario, nombre, imagenUrl));
         }
 
         _cart.setValue(newCart);
         CartPersistence.saveCart(newCart);
     }
 
-    public void removeFromCart(OrderRequest.Item item) {
-        List<OrderRequest.Item> currentCart = _cart.getValue();
+    public void removeFromCart(Pedido.Item item) {
+        List<Pedido.Item> currentCart = _cart.getValue();
         if (currentCart != null) {
-            List<OrderRequest.Item> newCart = new ArrayList<>(currentCart);
+            List<Pedido.Item> newCart = new ArrayList<>(currentCart);
             newCart.remove(item);
             _cart.setValue(newCart);
             CartPersistence.saveCart(newCart);
         }
     }
 
-    public void updateCartItemQuantity(OrderRequest.Item item, int quantity) {
-        List<OrderRequest.Item> currentCart = _cart.getValue();
+    public void updateCartItemQuantity(Pedido.Item item, int quantity) {
+        List<Pedido.Item> currentCart = _cart.getValue();
         if (currentCart != null) {
-            List<OrderRequest.Item> newCart = new ArrayList<>(currentCart);
-            for (OrderRequest.Item i : newCart) {
-                if (i.equals(item)) {
-                    i.cantidad = quantity;
+            List<Pedido.Item> newCart = new ArrayList<>(currentCart);
+            for (int i = 0; i < newCart.size(); i++) {
+                if (newCart.get(i).equals(item)) {
+                    newCart.set(i, new Pedido.Item(item.getId(), item.getPedidoId(), item.getProductoId(),
+                            quantity, item.getPrecioUnitario(), item.getNombre(), item.getImagenUrl()));
                     break;
                 }
             }
@@ -87,27 +91,25 @@ public class OrderViewModel extends ViewModel {
         CartPersistence.clearCart();
     }
 
-    private final MutableLiveData<List<OrderRequest>> _orders = new MutableLiveData<>();
-    public LiveData<List<OrderRequest>> orders = _orders;
+    private final MutableLiveData<List<Pedido>> _orders = new MutableLiveData<>();
+    public LiveData<List<Pedido>> orders = _orders;
 
     public void loadOrders() {
         String userId = com.uth.supereconomico.data.remote.SesionSupabase.obtenerIdUsuario();
-        
+
         if (userId == null) {
             Usuario user = authRepository.getCurrentUser();
             if (user != null) {
                 userId = user.getId();
             } else {
-                // Si aún no tenemos usuario, no podemos cargar pedidos. 
-                // Abortamos para evitar lista vacía.
                 return;
             }
         }
 
         _isLoading.setValue(true);
-        orderRepository.getOrders(userId, new OrderRepository.Callback<List<OrderRequest>>() {
+        orderRepository.getOrders(userId, new OrderRepository.Callback<List<Pedido>>() {
             @Override
-            public void onSuccess(List<OrderRequest> result) {
+            public void onSuccess(List<Pedido> result) {
                 _isLoading.postValue(false);
                 _orders.postValue(result != null ? result : new ArrayList<>());
             }
@@ -124,14 +126,14 @@ public class OrderViewModel extends ViewModel {
         _isSuccess.setValue(false);
     }
 
-    private final MutableLiveData<List<OrderRequest.Item>> _orderItems = new MutableLiveData<>();
-    public LiveData<List<OrderRequest.Item>> orderItems = _orderItems;
+    private final MutableLiveData<List<Pedido.Item>> _orderItems = new MutableLiveData<>();
+    public LiveData<List<Pedido.Item>> orderItems = _orderItems;
 
     public void loadOrderItems(Long orderId) {
         _isLoading.setValue(true);
-        orderRepository.getOrderItems(orderId, new OrderRepository.Callback<List<OrderRequest.Item>>() {
+        orderRepository.getOrderItems(orderId, new OrderRepository.Callback<List<Pedido.Item>>() {
             @Override
-            public void onSuccess(List<OrderRequest.Item> result) {
+            public void onSuccess(List<Pedido.Item> result) {
                 _isLoading.postValue(false);
                 _orderItems.postValue(result);
             }
@@ -149,7 +151,7 @@ public class OrderViewModel extends ViewModel {
             @Override
             public void onSuccess(Void result) {
                 _isLoading.postValue(false);
-                loadOrders(); // Recargar lista
+                loadOrders();
             }
             @Override
             public void onError(String message) {
@@ -169,7 +171,7 @@ public class OrderViewModel extends ViewModel {
             @Override
             public void onSuccess(Void result) {
                 loadOrderItems(orderId);
-                loadOrders(); // Actualizar la lista principal para reflejar el nuevo total
+                loadOrders();
             }
             @Override
             public void onError(String message) {
@@ -184,14 +186,12 @@ public class OrderViewModel extends ViewModel {
         orderRepository.deleteOrderItem(itemId, new OrderRepository.Callback<Void>() {
             @Override
             public void onSuccess(Void result) {
-                // Verificar si quedan items
-                List<OrderRequest.Item> currentItems = _orderItems.getValue();
+                List<Pedido.Item> currentItems = _orderItems.getValue();
                 if (currentItems != null && currentItems.size() <= 1) {
-                    // Si era el último item, eliminar el pedido
                     deleteOrder(orderId);
                 } else {
                     loadOrderItems(orderId);
-                    loadOrders(); // Actualizar la lista principal para reflejar el nuevo total
+                    loadOrders();
                 }
             }
             @Override
@@ -203,25 +203,29 @@ public class OrderViewModel extends ViewModel {
     }
 
     public void checkout(String method) {
+        checkout(null, method);
+    }
+
+    public void checkout(Long direccionId, String method) {
         Usuario user = authRepository.getCurrentUser();
         if (user == null) {
             _error.setValue("Inicia sesión para finalizar el pedido");
             return;
         }
 
-        List<OrderRequest.Item> items = _cart.getValue();
+        List<Pedido.Item> items = _cart.getValue();
         if (items == null || items.isEmpty()) {
             _error.setValue("El carrito está vacío");
             return;
         }
 
         double total = 0;
-        for (OrderRequest.Item item : items) {
-            total += item.precioUnitario * item.cantidad;
+        for (Pedido.Item item : items) {
+            total += item.getPrecioUnitario() * item.getCantidad();
         }
 
         _isLoading.setValue(true);
-        orderRepository.createOrder(user.getId(), null, method, total, items, new OrderRepository.Callback<Void>() {
+        orderRepository.createOrder(user.getId(), direccionId, method, total, items, new OrderRepository.Callback<Void>() {
             @Override
             public void onSuccess(Void result) {
                 clearCart();
@@ -239,51 +243,45 @@ public class OrderViewModel extends ViewModel {
 
     public void repeatOrder(Long orderId) {
         _isLoading.setValue(true);
-        orderRepository.getOrderItems(orderId, new OrderRepository.Callback<List<OrderRequest.Item>>() {
+        orderRepository.getOrderItems(orderId, new OrderRepository.Callback<List<Pedido.Item>>() {
             @Override
-            public void onSuccess(List<OrderRequest.Item> result) {
+            public void onSuccess(List<Pedido.Item> result) {
                 if (result != null && !result.isEmpty()) {
-                    List<OrderRequest.Item> currentCart = _cart.getValue();
+                    List<Pedido.Item> currentCart = _cart.getValue();
                     if (currentCart == null) currentCart = new ArrayList<>();
-                    
-                    List<OrderRequest.Item> newCart = new ArrayList<>(currentCart);
-                    
-                    for (OrderRequest.Item item : result) {
+
+                    List<Pedido.Item> newCart = new ArrayList<>(currentCart);
+
+                    for (Pedido.Item item : result) {
                         boolean found = false;
-                        for (OrderRequest.Item cartItem : newCart) {
-                            if (cartItem.productoId != null && cartItem.productoId.equals(item.productoId)) {
-                                cartItem.cantidad += item.cantidad;
+                        for (Pedido.Item cartItem : newCart) {
+                            if (cartItem.getProductoId() != null && cartItem.getProductoId().equals(item.getProductoId())) {
+                                newCart.remove(cartItem);
+                                newCart.add(new Pedido.Item(cartItem.getId(), cartItem.getPedidoId(), cartItem.getProductoId(),
+                                        cartItem.getCantidad() + item.getCantidad(), cartItem.getPrecioUnitario(), cartItem.getNombre(), cartItem.getImagenUrl()));
                                 found = true;
                                 break;
                             }
                         }
-                        
-                        if (!found) {
-                            String nombre = item.nombre;
-                            String imagenUrl = item.imagenUrl;
-                            
-                            // Si los campos locales son nulos (vienen del historial), usar los del join
-                            if (item.producto != null) {
-                                if (nombre == null || nombre.isEmpty()) nombre = item.producto.nombre;
-                                if (imagenUrl == null || imagenUrl.isEmpty()) imagenUrl = item.producto.imagenUrl;
-                            }
 
-                            newCart.add(new OrderRequest.Item(
-                                item.productoId, 
-                                item.cantidad, 
-                                item.precioUnitario, 
-                                nombre, 
-                                imagenUrl
+                        if (!found) {
+                            newCart.add(new Pedido.Item(
+                                null,
+                                null,
+                                item.getProductoId(),
+                                item.getCantidad(),
+                                item.getPrecioUnitario(),
+                                item.getNombre(),
+                                item.getImagenUrl()
                             ));
                         }
                     }
-                    
+
                     _cart.setValue(newCart);
                     CartPersistence.saveCart(newCart);
-                    
+
                     _isLoading.setValue(false);
                     _isSuccess.setValue(true);
-                    android.util.Log.d("RepeatOrder", "Productos añadidos: " + result.size());
                 } else {
                     _isLoading.setValue(false);
                     _error.setValue("No se encontraron productos en este pedido");

@@ -18,8 +18,8 @@ public interface AuthApi {
     @POST("auth/v1/token?grant_type=password")
     Call<AuthResponse> login(@Body LoginRequest request);
 
-    @POST("auth/v1/verify")
-    Call<AuthResponse> verifyOtp(@Body VerifyOtpRequest request);
+    @POST("functions/v1/login-by-phone")
+    Call<AuthResponse> loginByPhone(@Body PhoneLoginRequest request);
 
     @POST("auth/v1/verify")
     Call<AuthResponse> verificarRecuperacion(@Body VerificarRecuperacionRequest request);
@@ -29,6 +29,9 @@ public interface AuthApi {
 
     @PUT("auth/v1/user")
     Call<Void> updateUser(@Header("Authorization") String token, @Body UpdateUserRequest request);
+
+    @POST("auth/v1/logout?scope=local")
+    Call<Void> logout(@Header("Authorization") String token);
 
     @POST("rest/v1/aceptaciones_login")
     Call<Void> logLoginAcceptance(@Body LoginAcceptanceRequest request);
@@ -88,18 +91,6 @@ public interface AuthApi {
         }
     }
 
-    class VerifyOtpRequest {
-        String email;
-        String token;
-        @SerializedName("type")
-        String type = "signup";
-
-        public VerifyOtpRequest(String email, String token) {
-            this.email = email;
-            this.token = token;
-        }
-    }
-
     class VerificarRecuperacionRequest {
         @SerializedName("token_hash")
         String tokenHash;
@@ -108,6 +99,15 @@ public interface AuthApi {
 
         public VerificarRecuperacionRequest(String tokenHash) {
             this.tokenHash = tokenHash;
+        }
+    }
+
+    class PhoneLoginRequest {
+        String phone;
+        String password;
+        public PhoneLoginRequest(String phone, String password) {
+            this.phone = phone;
+            this.password = password;
         }
     }
 
@@ -122,10 +122,16 @@ public interface AuthApi {
     class AuthResponse {
         @SerializedName("access_token")
         String accessToken;
+        @SerializedName("refresh_token")
+        String refreshToken;
+        @SerializedName("expires_in")
+        Long expiresIn;
         @SerializedName("user")
         UserResponse user;
 
         public String getAccessToken() { return accessToken; }
+        public String getRefreshToken() { return refreshToken; }
+        public Long getExpiresIn() { return expiresIn; }
         public UserResponse getUser() { return user; }
     }
 

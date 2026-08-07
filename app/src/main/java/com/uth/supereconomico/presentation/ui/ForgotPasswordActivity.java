@@ -14,7 +14,6 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.uth.supereconomico.R;
 import com.uth.supereconomico.presentation.viewmodel.ForgotPasswordViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
-import com.uth.supereconomico.utils.FormateadorTelefono;
 
 public class ForgotPasswordActivity extends AppCompatActivity {
 
@@ -33,7 +32,6 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         viewModel = new ViewModelProvider(this, factory).get(ForgotPasswordViewModel.class);
 
         etEmail = findViewById(R.id.etEmail);
-        FormateadorTelefono.aplicar(etEmail);
         btnSendInstructions = findViewById(R.id.btnSendInstructions);
         btnBack = findViewById(R.id.btnBack);
         btnBack.setImageResource(R.drawable.ic_back_curved);

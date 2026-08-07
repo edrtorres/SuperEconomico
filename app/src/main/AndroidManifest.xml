@@ -22,7 +22,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.SuperEconomico"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false">
 
         <activity
             android:name=".presentation.ui.WelcomeActivity"
@@ -41,7 +41,6 @@
         <activity android:name=".presentation.ui.RegisterActivity" />
         <activity android:name=".presentation.ui.SeleccionarUbicacionActivity" />
         <activity android:name=".presentation.ui.ForgotPasswordActivity" />
-        <activity android:name=".presentation.ui.VerifyOtpActivity" />
         <activity android:name=".presentation.ui.ResetPasswordActivity"
             android:exported="true">
             <intent-filter>

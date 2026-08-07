@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.uth.supereconomico.data.remote.models.OrderRequest;
+import com.uth.supereconomico.domain.entities.Pedido;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,19 +21,19 @@ public class CartPersistence {
         }
     }
 
-    public static void saveCart(List<OrderRequest.Item> items) {
+    public static void saveCart(List<Pedido.Item> items) {
         if (preferences == null) return;
         String json = gson.toJson(items);
         preferences.edit().putString(KEY_CART_ITEMS, json).apply();
     }
 
-    public static List<OrderRequest.Item> loadCart() {
+    public static List<Pedido.Item> loadCart() {
         if (preferences == null) return new ArrayList<>();
         String json = preferences.getString(KEY_CART_ITEMS, null);
         if (json == null || json.isEmpty()) return new ArrayList<>();
         
-        Type type = new TypeToken<ArrayList<OrderRequest.Item>>() {}.getType();
-        List<OrderRequest.Item> items = gson.fromJson(json, type);
+        Type type = new TypeToken<ArrayList<Pedido.Item>>() {}.getType();
+        List<Pedido.Item> items = gson.fromJson(json, type);
         return items != null ? items : new ArrayList<>();
     }
 

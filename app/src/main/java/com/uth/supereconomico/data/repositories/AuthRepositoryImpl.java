@@ -28,30 +28,26 @@ public class AuthRepositoryImpl implements AuthRepository {
 
     @Override
     public void login(String emailOrPhone, String password, Callback<Usuario> callback) {
-        // 1. Detectar si es teléfono (8 dígitos)
-        String limpio = emailOrPhone.replaceAll("[^0-9]", "");
-        if (limpio.length() == 8 && !emailOrPhone.contains("@")) {
-            // 2. Buscar el correo asociado al teléfono
-            supabaseApi.getPerfilPorTelefono("eq." + limpio, "email").enqueue(new retrofit2.Callback<List<UserDTO>>() {
-                @Override
-                public void onResponse(Call<List<UserDTO>> call, Response<List<UserDTO>> response) {
-                    if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                        String correoReal = response.body().get(0).email;
-                        // 3. Intentar login con el correo encontrado
-                        iniciarSesionConCorreo(correoReal, password, callback);
-                    } else {
-                        callback.onError("No se encontró una cuenta con ese número de teléfono.");
-                    }
-                }
-                @Override
-                public void onFailure(Call<List<UserDTO>> call, Throwable t) {
-                    callback.onError("Error de conexión al verificar teléfono.");
-                }
-            });
-        } else {
-            // Es un correo, proceder normal
-            iniciarSesionConCorreo(emailOrPhone, password, callback);
+        if (emailOrPhone == null || emailOrPhone.trim().isEmpty()) {
+            callback.onError("Ingresa tu correo o teléfono registrado");
+            return;
         }
+        String identifier = emailOrPhone.trim();
+        if (identifier.contains("@")) iniciarSesionConCorreo(identifier, password, callback);
+        else iniciarSesionConTelefono(identifier, password, callback);
+    }
+
+    private void iniciarSesionConTelefono(String telefono, String password, Callback<Usuario> callback) {
+        authApi.loginByPhone(new AuthApi.PhoneLoginRequest(telefono, password)).enqueue(new retrofit2.Callback<AuthApi.AuthResponse>() {
+            @Override public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().getUser() != null) {
+                    AuthApi.AuthResponse auth = response.body();
+                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
+                    fetchUserProfile(auth.getUser().getId(), callback);
+                } else callback.onError(obtenerDetalleError(response, "Correo/teléfono o contraseña incorrectos"));
+            }
+            @Override public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) { callback.onError("No se pudo conectar con el servidor"); }
+        });
     }
 
 
@@ -61,7 +57,7 @@ public class AuthRepositoryImpl implements AuthRepository {
             public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     AuthApi.AuthResponse auth = response.body();
-                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getUser().getId());
+                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
                     fetchUserProfile(auth.getUser().getId(), callback);
                 } else {
                     String errorMsg = obtenerDetalleError(response, "Login fallido");
@@ -83,7 +79,11 @@ public class AuthRepositoryImpl implements AuthRepository {
         authApi.signUp(new AuthApi.SignUpRequest(email, password, nombreCompleto, telefono, direcciones)).enqueue(new retrofit2.Callback<AuthApi.AuthResponse>() {
             @Override
             public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
-                if (response.isSuccessful()) {
+                if (response.isSuccessful() && response.body() != null) {
+                    AuthApi.AuthResponse auth = response.body();
+                    if (auth.getAccessToken() != null && auth.getUser() != null) {
+                        SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
+                    }
                     callback.onSuccess(null);
                 } else {
                     String errorMsg = obtenerDetalleError(response, "Error en registro");
@@ -95,27 +95,6 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) {
                 RemoteLogger.log("AuthRepositoryImpl", "register", "Fallo de red", t, null);
-                callback.onError(t.getMessage());
-            }
-        });
-    }
-
-    @Override
-    public void verifyOtp(String email, String otp, Callback<Usuario> callback) {
-        authApi.verifyOtp(new AuthApi.VerifyOtpRequest(email, otp)).enqueue(new retrofit2.Callback<AuthApi.AuthResponse>() {
-            @Override
-            public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    AuthApi.AuthResponse auth = response.body();
-                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getUser().getId());
-                    fetchUserProfile(auth.getUser().getId(), callback);
-                } else {
-                    callback.onError(obtenerDetalleError(response, "Codigo invalido"));
-                }
-            }
-
-            @Override
-            public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) {
                 callback.onError(t.getMessage());
             }
         });
@@ -147,7 +126,7 @@ public class AuthRepositoryImpl implements AuthRepository {
                     currentUser = dto.toDomain();
                     
                     // Asegurar que el ID se guarde en la sesión global
-                    SesionSupabase.guardarSesion(SesionSupabase.obtenerTokenAcceso(), dto.id);
+                    SesionSupabase.actualizarIdUsuario(dto.id);
 
                     if (callback != null) callback.onSuccess(currentUser);
                 } else {
@@ -164,22 +143,11 @@ public class AuthRepositoryImpl implements AuthRepository {
 
     @Override
     public void recoverPassword(String email, Callback<Void> callback) {
-        if (esTelefono(email)) {
-            resolverCorreoPorTelefono(email, new Callback<String>() {
-                @Override
-                public void onSuccess(String correo) {
-                    enviarRecuperacionPorCorreo(correo, callback);
-                }
-
-                @Override
-                public void onError(String message) {
-                    callback.onError(message);
-                }
-            });
+        if (email == null || !email.contains("@")) {
+            callback.onError("Ingresa el correo electrónico registrado");
             return;
         }
-
-        enviarRecuperacionPorCorreo(email, callback);
+        enviarRecuperacionPorCorreo(email.trim(), callback);
     }
 
     private void enviarRecuperacionPorCorreo(String email, Callback<Void> callback) {
@@ -502,6 +470,13 @@ public class AuthRepositoryImpl implements AuthRepository {
 
     @Override
     public void logout() {
+        String accessToken = SesionSupabase.obtenerTokenAcceso();
+        if (accessToken != null) {
+            authApi.logout("Bearer " + accessToken).enqueue(new retrofit2.Callback<Void>() {
+                @Override public void onResponse(Call<Void> call, Response<Void> response) { }
+                @Override public void onFailure(Call<Void> call, Throwable t) { }
+            });
+        }
         SesionSupabase.cerrarSesion();
         currentUser = null;
     }

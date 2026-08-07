@@ -14,13 +14,13 @@ import com.uth.supereconomico.MainActivity;
 import com.uth.supereconomico.R;
 import com.uth.supereconomico.presentation.viewmodel.LoginViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
-import com.uth.supereconomico.utils.FormateadorTelefono;
 
 public class LoginActivity extends AppCompatActivity {
 
     private TextInputEditText etEmail;
     private TextInputEditText etPassword;
     private CheckBox cbAcceptPolicy;
+    private CheckBox cbRememberUser;
     private MaterialButton btnLogin;
     private MaterialButton btnGoToRegister;
     private MaterialButton btnRecoverPassword;
@@ -36,8 +36,8 @@ public class LoginActivity extends AppCompatActivity {
 
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
-        FormateadorTelefono.aplicar(etEmail);
         cbAcceptPolicy = findViewById(R.id.cbAcceptPolicyLogin);
+        cbRememberUser = findViewById(R.id.cbRememberUser);
         btnLogin = findViewById(R.id.btnLogin);
         btnGoToRegister = findViewById(R.id.btnGoToRegister);
         btnRecoverPassword = findViewById(R.id.btnRecoverPassword);
@@ -45,6 +45,9 @@ public class LoginActivity extends AppCompatActivity {
         // Recuperar estado del CheckBox
         android.content.SharedPreferences prefs = getSharedPreferences("login_prefs", MODE_PRIVATE);
         cbAcceptPolicy.setChecked(prefs.getBoolean("policy_accepted", false));
+        String remembered = prefs.getString("remembered_identifier", "");
+        etEmail.setText(remembered);
+        cbRememberUser.setChecked(!remembered.isEmpty());
 
         btnLogin.setOnClickListener(v -> iniciarSesion());
         btnGoToRegister.setOnClickListener(v -> startActivity(new Intent(this, RegisterActivity.class)));
@@ -56,6 +59,11 @@ public class LoginActivity extends AppCompatActivity {
     private void observarViewModel() {
         viewModel.user.observe(this, usuario -> {
             Toast.makeText(LoginActivity.this, "Bienvenido, " + usuario.getNombreCompleto(), Toast.LENGTH_SHORT).show();
+            if (usuario.getRol() == com.uth.supereconomico.domain.entities.Usuario.Rol.ENCARGADO) {
+                Toast.makeText(this, "La cuenta administrativa se usa en el cPanel", Toast.LENGTH_LONG).show();
+                com.uth.supereconomico.data.remote.SesionSupabase.cerrarSesion();
+                return;
+            }
             startActivity(new Intent(LoginActivity.this, MainActivity.class));
             finishAffinity();
         });
@@ -81,6 +89,8 @@ public class LoginActivity extends AppCompatActivity {
 
         // Guardar estado del CheckBox
         getSharedPreferences("login_prefs", MODE_PRIVATE).edit().putBoolean("policy_accepted", true).apply();
+        getSharedPreferences("login_prefs", MODE_PRIVATE).edit()
+                .putString("remembered_identifier", cbRememberUser.isChecked() ? email : "").apply();
 
         viewModel.login(email, password);
     }

@@ -8,7 +8,7 @@ import androidx.work.WorkerParameters;
 import com.uth.supereconomico.data.remote.RetrofitClient;
 import com.uth.supereconomico.data.remote.SesionSupabase;
 import com.uth.supereconomico.data.remote.SupabaseApi;
-import com.uth.supereconomico.data.remote.models.OrderRequest;
+import com.uth.supereconomico.data.remote.models.OrderDTO;
 import java.util.List;
 import retrofit2.Response;
 
@@ -31,7 +31,7 @@ public class OrderSyncWorker extends Worker {
         SupabaseApi api = RetrofitClient.getClient().create(SupabaseApi.class);
         try {
             // Buscamos los últimos pedidos del usuario
-            Response<List<OrderRequest>> response = api.getPedidos("eq." + userId, "*", "id.desc").execute();
+            Response<List<OrderDTO>> response = api.getPedidos("eq." + userId, "*", "id.desc").execute();
             
             if (response.isSuccessful() && response.body() != null) {
                 checkChanges(response.body());
@@ -43,11 +43,11 @@ public class OrderSyncWorker extends Worker {
         return Result.success();
     }
 
-    private void checkChanges(List<OrderRequest> orders) {
+    private void checkChanges(List<OrderDTO> orders) {
         SharedPreferences prefs = getApplicationContext().getSharedPreferences(PREF_ORDERS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
 
-        for (OrderRequest order : orders) {
+        for (OrderDTO order : orders) {
             String key = "order_" + order.id;
             String lastStatus = prefs.getString(key, null);
             String currentStatus = order.estado;

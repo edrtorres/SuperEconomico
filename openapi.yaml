@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: SuperEconomico API Cliente
-  version: 1.3.0
-  description: Endpoints actualizados para la app cliente incluyendo Catálogo, Pedidos, Búsqueda, Métodos de Pago y Seguridad.
+  version: 1.4.0
+  description: Endpoints actualizados para la app cliente incluyendo Autenticación, Catálogo, Pedidos, Métodos de Pago, Direcciones y Soporte.
 
 servers:
   - url: https://mvrlcbcydpubhovvrmvf.supabase.co
@@ -50,6 +50,18 @@ components:
             id: {type: string, format: uuid}
             email: {type: string}
 
+    VerifyOtpRequest:
+      type: object
+      properties:
+        email: {type: string}
+        token: {type: string}
+        type: {type: string, enum: [signup, recovery]}
+
+    RecoverRequest:
+      type: object
+      properties:
+        email: {type: string}
+
     Categoria:
       type: object
       properties:
@@ -73,10 +85,10 @@ components:
       properties:
         id: {type: integer}
         perfil_id: {type: string, format: uuid}
-        estado: {type: string, enum: [pendiente, cocina, entrega, cerrado]}
+        estado: {type: string, enum: [pendiente, preparando, en_camino, entregado, cancelado]}
         total: {type: number}
         direccion_id: {type: integer}
-        metodo_pago: {type: string, enum: [Efectivo, Tarjeta]}
+        metodo_pago: {type: string}
         creado_at: {type: string, format: date-time}
 
     PedidoItem:
@@ -87,6 +99,8 @@ components:
         producto_id: {type: integer}
         cantidad: {type: integer}
         precio_unitario: {type: number}
+        nombre: {type: string}
+        imagen_url: {type: string}
 
     Perfil:
       type: object
@@ -95,7 +109,9 @@ components:
         email: {type: string}
         nombre_completo: {type: string}
         telefono: {type: string}
+        direccion: {type: string}
         descripcion: {type: string}
+        avatar_url: {type: string}
         rol: {type: string, enum: [cliente, encargado]}
 
     Direccion:
@@ -107,6 +123,21 @@ components:
         direccion_texto: {type: string}
         latitud: {type: number}
         longitud: {type: number}
+
+    MetodoPago:
+      type: object
+      properties:
+        id: {type: integer}
+        perfil_id: {type: string, format: uuid}
+        titular: {type: string}
+        numero_tarjeta: {type: string}
+        fecha_expiracion: {type: string}
+
+    LoginAcceptanceRequest:
+      type: object
+      properties:
+        usuario_id: {type: string, format: uuid}
+        email: {type: string}
 
     LogErrorRequest:
       type: object
@@ -152,9 +183,35 @@ paths:
             application/json:
               schema: {$ref: "#/components/schemas/AuthResponse"}
 
+  /auth/v1/verify:
+    post:
+      summary: Verificar OTP para Registro o Recuperación
+      tags: [Autenticación]
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/VerifyOtpRequest"}
+      responses:
+        "200": {description: Verificado correctamente}
+
+  /auth/v1/recover:
+    post:
+      summary: Solicitar recuperación de contraseña
+      tags: [Autenticación]
+      parameters:
+        - in: query
+          name: redirect_to
+          schema: {type: string}
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/RecoverRequest"}
+      responses:
+        "200": {description: Correo de recuperación enviado}
+
   /auth/v1/user:
     put:
-      summary: Actualizar contraseña (Seguridad)
+      summary: Actualizar datos de usuario (Contraseña)
       tags: [Autenticación]
       requestBody:
         content:
@@ -166,21 +223,35 @@ paths:
       responses:
         "200": {description: Actualizada}
 
+  /rest/v1/aceptaciones_login:
+    post:
+      summary: Registrar aceptación de login para auditoría
+      tags: [Autenticación]
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/LoginAcceptanceRequest"}
+      responses:
+        "201": {description: Aceptación registrada}
+
   /rest/v1/perfiles:
     get:
-      summary: Buscar perfil (Soporte Login Dual)
+      summary: Obtener perfiles por ID o Teléfono
       tags: [Perfiles]
       parameters:
+        - in: query
+          name: id
+          schema: {type: string, example: "eq.uuid"}
         - in: query
           name: telefono
           schema: {type: string, example: "eq.95212400"}
         - in: query
           name: select
-          schema: {type: string, default: "email"}
+          schema: {type: string, default: "*"}
       responses:
         "200": {description: Perfil encontrado}
     patch:
-      summary: Actualizar datos personales
+      summary: Actualizar datos del perfil
       tags: [Perfiles]
       parameters:
         - in: query
@@ -197,6 +268,10 @@ paths:
     get:
       summary: Listar categorías del catálogo
       tags: [Catálogo]
+      parameters:
+        - in: query
+          name: select
+          schema: {type: string, default: "*"}
       responses:
         "200": {description: Lista de categorías}
 
@@ -206,9 +281,11 @@ paths:
       tags: [Catálogo]
       parameters:
         - in: query
-          name: nombre
-          description: Filtro de búsqueda por nombre (ilike)
-          schema: {type: string, example: "ilike.*corona*"}
+          name: select
+          schema: {type: string, default: "*"}
+        - in: query
+          name: esta_activo
+          schema: {type: string, example: "eq.true"}
         - in: query
           name: categoria_id
           schema: {type: string, example: "eq.1"}
@@ -223,6 +300,12 @@ paths:
         - in: query
           name: perfil_id
           schema: {type: string, example: "eq.uuid"}
+        - in: query
+          name: select
+          schema: {type: string, default: "*"}
+        - in: query
+          name: order
+          schema: {type: string, example: "creado_at.desc"}
       responses:
         "200": {description: Lista de pedidos}
     post:
@@ -256,6 +339,9 @@ paths:
         - in: query
           name: pedido_id
           schema: {type: string, example: "eq.1"}
+        - in: query
+          name: select
+          schema: {type: string, default: "*"}
       responses:
         "200": {description: Items del pedido}
     post:
@@ -268,7 +354,7 @@ paths:
       responses:
         "201": {description: Insertados}
     patch:
-      summary: Modificar cantidad de un producto (Sumar/Restar)
+      summary: Modificar item del pedido
       tags: [Pedidos]
       parameters:
         - in: query
@@ -279,7 +365,7 @@ paths:
           application/json:
             schema: {type: object, properties: {cantidad: {type: integer}}}
       responses:
-        "204": {description: Cantidad actualizada}
+        "204": {description: Item actualizado}
     delete:
       summary: Quitar producto del pedido
       tags: [Pedidos]
@@ -298,10 +384,13 @@ paths:
         - in: query
           name: perfil_id
           schema: {type: string, example: "eq.uuid"}
+        - in: query
+          name: select
+          schema: {type: string, default: "*"}
       responses:
         "200": {description: Lista de direcciones}
     post:
-      summary: Guardar nueva ubicación con coordenadas GPS
+      summary: Guardar nueva ubicación
       tags: [Direcciones]
       requestBody:
         content:
@@ -319,9 +408,41 @@ paths:
       responses:
         "204": {description: Eliminada}
 
+  /rest/v1/metodos_pago:
+    get:
+      summary: Listar métodos de pago guardados
+      tags: [Pagos]
+      parameters:
+        - in: query
+          name: perfil_id
+          schema: {type: string, example: "eq.uuid"}
+        - in: query
+          name: select
+          schema: {type: string, default: "*"}
+      responses:
+        "200": {description: Lista de tarjetas}
+    post:
+      summary: Registrar nuevo método de pago
+      tags: [Pagos]
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/MetodoPago"}
+      responses:
+        "201": {description: Guardado}
+    delete:
+      summary: Eliminar tarjeta
+      tags: [Pagos]
+      parameters:
+        - in: query
+          name: id
+          schema: {type: string, example: "eq.1"}
+      responses:
+        "204": {description: Eliminado}
+
   /rest/v1/logs_errores:
     post:
-      summary: Reportar errores de la App (Remote Logger)
+      summary: Reportar errores de la App
       tags: [Soporte]
       requestBody:
         content:

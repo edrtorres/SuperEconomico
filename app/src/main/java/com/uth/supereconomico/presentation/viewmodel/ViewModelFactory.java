@@ -10,7 +10,6 @@ import com.uth.supereconomico.domain.usecases.RecoverPasswordUseCase;
 import com.uth.supereconomico.domain.usecases.RegisterUseCase;
 import com.uth.supereconomico.domain.usecases.UpdatePasswordUseCase;
 import com.uth.supereconomico.domain.usecases.UpdateProfileUseCase;
-import com.uth.supereconomico.domain.usecases.VerifyOtpUseCase;
 
 public class ViewModelFactory implements ViewModelProvider.Factory {
     
@@ -30,9 +29,6 @@ public class ViewModelFactory implements ViewModelProvider.Factory {
         } else if (modelClass.isAssignableFrom(ForgotPasswordViewModel.class)) {
             RecoverPasswordUseCase recoverPasswordUseCase = Injection.provideRecoverPasswordUseCase();
             return (T) new ForgotPasswordViewModel(recoverPasswordUseCase);
-        } else if (modelClass.isAssignableFrom(VerifyOtpViewModel.class)) {
-            VerifyOtpUseCase verifyOtpUseCase = Injection.provideVerifyOtpUseCase();
-            return (T) new VerifyOtpViewModel(verifyOtpUseCase);
         } else if (modelClass.isAssignableFrom(ResetPasswordViewModel.class)) {
             UpdatePasswordUseCase updatePasswordUseCase = Injection.provideUpdatePasswordUseCase();
             return (T) new ResetPasswordViewModel(updatePasswordUseCase);

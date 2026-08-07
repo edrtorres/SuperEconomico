@@ -12,7 +12,7 @@ public class LoginUseCase {
 
     public void execute(String usuario, String password, AuthRepository.Callback<Usuario> callback) {
         if (usuario == null || usuario.trim().isEmpty() || password == null || password.trim().isEmpty()) {
-            callback.onError("Correo o telefono y contrasena son obligatorios");
+            callback.onError("Correo y contrasena son obligatorios");
             return;
         }
 

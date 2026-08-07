@@ -82,9 +82,9 @@ public class RegisterActivity extends AppCompatActivity {
     private void observarViewModel() {
         viewModel.isSuccess.observe(this, correcto -> {
             if (correcto) {
-                Toast.makeText(RegisterActivity.this, "Cuenta creada. Revisa tu correo para confirmar", Toast.LENGTH_LONG).show();
-                Intent intent = new Intent(RegisterActivity.this, VerifyOtpActivity.class);
-                intent.putExtra("email", etEmail.getText().toString().trim());
+                Toast.makeText(RegisterActivity.this, "¡Cuenta creada con éxito!", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
                 finish();
             }

@@ -28,6 +28,8 @@ public class UserDTO {
         Usuario.Rol domainRol = Usuario.Rol.CLIENTE;
         if ("encargado".equalsIgnoreCase(rol)) {
             domainRol = Usuario.Rol.ENCARGADO;
+        } else if ("repartidor".equalsIgnoreCase(rol)) {
+            domainRol = Usuario.Rol.REPARTIDOR;
         }
         return new Usuario(id, email, nombreCompleto, domainRol, avatarUrl, descripcion, latitud, longitud, telefono, direccion);
     }

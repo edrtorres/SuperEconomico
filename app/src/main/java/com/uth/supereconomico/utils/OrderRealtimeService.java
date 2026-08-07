@@ -15,7 +15,7 @@ import com.uth.supereconomico.R;
 import com.uth.supereconomico.data.remote.RetrofitClient;
 import com.uth.supereconomico.data.remote.SesionSupabase;
 import com.uth.supereconomico.data.remote.SupabaseApi;
-import com.uth.supereconomico.data.remote.models.OrderRequest;
+import com.uth.supereconomico.data.remote.models.OrderDTO;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -76,7 +76,7 @@ public class OrderRealtimeService extends Service {
         SupabaseApi api = RetrofitClient.getClient().create(SupabaseApi.class);
         try {
             // Buscamos cambios en los pedidos
-            Response<List<OrderRequest>> response = api.getPedidos("eq." + userId, "*", "id.desc").execute();
+            Response<List<OrderDTO>> response = api.getPedidos("eq." + userId, "*", "id.desc").execute();
             if (response.isSuccessful() && response.body() != null) {
                 android.util.Log.d("RealtimeService", "Pedidos encontrados: " + response.body().size());
                 compararEstados(response.body());
@@ -88,11 +88,11 @@ public class OrderRealtimeService extends Service {
         }
     }
 
-    private void compararEstados(List<OrderRequest> orders) {
+    private void compararEstados(List<OrderDTO> orders) {
         SharedPreferences prefs = getSharedPreferences(PREF_ORDERS, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
 
-        for (OrderRequest order : orders) {
+        for (OrderDTO order : orders) {
             String key = "status_" + order.id;
             String lastStatus = prefs.getString(key, null);
             String currentStatus = order.estado;

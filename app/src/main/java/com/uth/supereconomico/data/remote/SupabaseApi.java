@@ -1,9 +1,10 @@
 package com.uth.supereconomico.data.remote;
 
 import com.uth.supereconomico.data.remote.models.CategoriaDTO;
+import com.google.gson.JsonObject;
 import com.uth.supereconomico.data.remote.models.DireccionRequest;
 import com.uth.supereconomico.data.remote.models.ErrorLogRequest;
-import com.uth.supereconomico.data.remote.models.OrderRequest;
+import com.uth.supereconomico.data.remote.models.OrderDTO;
 import com.uth.supereconomico.data.remote.models.ProductDTO;
 import com.uth.supereconomico.data.remote.models.UserDTO;
 import java.util.List;
@@ -34,17 +35,37 @@ public interface SupabaseApi {
         @Query("select") String select
     );
 
-    @POST("rest/v1/pedidos")
-    Call<List<OrderRequest>> crearPedido(
-        @Header("Prefer") String prefer,
-        @Body OrderRequest pedido
-    );
+    @POST("rest/v1/rpc/crear_pedido_seguro")
+    Call<Long> crearPedidoSeguro(@Body JsonObject pedido);
 
-    @POST("rest/v1/pedido_items")
-    Call<Void> crearItemsPedido(@Body List<OrderRequest.Item> items);
+    class CrearPedidoRequest {
+        @com.google.gson.annotations.SerializedName("p_direccion_id")
+        final Long direccionId;
+        @com.google.gson.annotations.SerializedName("p_metodo_pago")
+        final String metodoPago;
+        @com.google.gson.annotations.SerializedName("p_items")
+        final List<ItemPedidoRequest> items;
+
+        public CrearPedidoRequest(Long direccionId, String metodoPago, List<ItemPedidoRequest> items) {
+            this.direccionId = direccionId;
+            this.metodoPago = metodoPago;
+            this.items = items;
+        }
+    }
+
+    class ItemPedidoRequest {
+        @com.google.gson.annotations.SerializedName("producto_id")
+        final Long productoId;
+        final Integer cantidad;
+
+        public ItemPedidoRequest(Long productoId, Integer cantidad) {
+            this.productoId = productoId;
+            this.cantidad = cantidad;
+        }
+    }
 
     @GET("rest/v1/pedidos")
-    Call<List<OrderRequest>> getPedidos(
+    Call<List<OrderDTO>> getPedidos(
             @Query("perfil_id") String perfilId,
             @Query("select") String select,
             @Query("order") String order
@@ -54,7 +75,7 @@ public interface SupabaseApi {
     Call<Void> deletePedido(@Query("id") String filtroId);
 
     @GET("rest/v1/pedido_items")
-    Call<List<OrderRequest.Item>> getPedidoItems(
+    Call<List<OrderDTO.Item>> getPedidoItems(
             @Query("pedido_id") String pedidoId,
             @Query("select") String select
     );
@@ -62,7 +83,7 @@ public interface SupabaseApi {
     @PATCH("rest/v1/pedido_items")
     Call<Void> updateItemPedido(
             @Query("id") String filtroId,
-            @Body OrderRequest.Item item
+            @Body OrderDTO.Item item
     );
 
     @DELETE("rest/v1/pedido_items")

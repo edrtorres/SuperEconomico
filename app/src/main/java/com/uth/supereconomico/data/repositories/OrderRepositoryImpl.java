@@ -1,9 +1,15 @@
 package com.uth.supereconomico.data.repositories;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
 import com.uth.supereconomico.data.remote.SupabaseApi;
-import com.uth.supereconomico.data.remote.models.OrderRequest;
+import com.uth.supereconomico.data.remote.models.OrderDTO;
+import com.uth.supereconomico.domain.entities.Pedido;
 import com.uth.supereconomico.domain.repositories.OrderRepository;
+import java.util.ArrayList;
 import java.util.List;
+import java.io.IOException;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -15,45 +21,72 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
-    public void createOrder(String perfilId, Long direccionId, String metodoPago, double total, List<OrderRequest.Item> items, Callback<Void> callback) {
-        OrderRequest request = new OrderRequest();
-        request.perfilId = perfilId;
-        request.direccionId = direccionId;
-        request.metodoPago = metodoPago;
-        request.total = total;
-        request.estado = "pendiente";
+    public void createOrder(String perfilId, Long direccionId, String metodoPago, double total, List<Pedido.Item> items, Callback<Void> callback) {
+        JsonArray requestItems = new JsonArray();
+        for (Pedido.Item item : items) {
+            JsonObject requestItem = new JsonObject();
+            requestItem.addProperty("producto_id", item.getProductoId());
+            requestItem.addProperty("cantidad", item.getCantidad());
+            requestItems.add(requestItem);
+        }
 
-        supabaseApi.crearPedido("return=representation", request).enqueue(new retrofit2.Callback<List<OrderRequest>>() {
+        JsonObject request = new JsonObject();
+        if (direccionId == null) {
+            request.add("p_direccion_id", JsonNull.INSTANCE);
+        } else {
+            request.addProperty("p_direccion_id", direccionId);
+        }
+        request.addProperty("p_metodo_pago", metodoPago);
+        request.add("p_items", requestItems);
+
+        supabaseApi.crearPedidoSeguro(request).enqueue(new retrofit2.Callback<Long>() {
             @Override
-            public void onResponse(Call<List<OrderRequest>> call, Response<List<OrderRequest>> response) {
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    long pedidoId = response.body().get(0).id;
-                    for (OrderRequest.Item item : items) {
-                        item.pedidoId = pedidoId;
-                    }
-                    insertarItems(items, callback);
+            public void onResponse(Call<Long> call, Response<Long> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(null);
                 } else {
-                    callback.onError("Error al crear el encabezado: " + response.code());
+                    callback.onError("No se pudo crear el pedido: " + detalleError(response));
                 }
             }
 
             @Override
-            public void onFailure(Call<List<OrderRequest>> call, Throwable t) {
+            public void onFailure(Call<Long> call, Throwable t) {
                 callback.onError("Fallo de red: " + t.getMessage());
             }
         });
     }
 
+    private String detalleError(Response<?> response) {
+        String detalle = null;
+        try {
+            if (response.errorBody() != null) {
+                detalle = response.errorBody().string();
+            }
+        } catch (IOException ignored) {
+            detalle = null;
+        }
+
+        if (detalle == null || detalle.trim().isEmpty()) {
+            return "codigo " + response.code();
+        }
+        return "codigo " + response.code() + " - " + detalle;
+    }
+
     @Override
-    public void getOrders(String perfilId, Callback<List<OrderRequest>> callback) {
-        supabaseApi.getPedidos("eq." + perfilId, "*", "creado_at.desc").enqueue(new retrofit2.Callback<List<OrderRequest>>() {
+    public void getOrders(String perfilId, Callback<List<Pedido>> callback) {
+        supabaseApi.getPedidos("eq." + perfilId, "*", "creado_at.desc").enqueue(new retrofit2.Callback<List<OrderDTO>>() {
             @Override
-            public void onResponse(Call<List<OrderRequest>> call, Response<List<OrderRequest>> response) {
-                if (response.isSuccessful()) callback.onSuccess(response.body());
-                else callback.onError("Error al obtener pedidos: " + response.code());
+            public void onResponse(Call<List<OrderDTO>> call, Response<List<OrderDTO>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Pedido> domainOrders = new ArrayList<>();
+                    for (OrderDTO dto : response.body()) {
+                        domainOrders.add(dto.toDomain());
+                    }
+                    callback.onSuccess(domainOrders);
+                } else callback.onError("Error al obtener pedidos: " + response.code());
             }
             @Override
-            public void onFailure(Call<List<OrderRequest>> call, Throwable t) {
+            public void onFailure(Call<List<OrderDTO>> call, Throwable t) {
                 callback.onError(t.getMessage());
             }
         });
@@ -76,17 +109,21 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
-    public void getOrderItems(Long orderId, Callback<List<OrderRequest.Item>> callback) {
+    public void getOrderItems(Long orderId, Callback<List<Pedido.Item>> callback) {
         if (orderId == null) return;
-        // Realizamos un join con la tabla productos para obtener nombre e imagen_url
-        supabaseApi.getPedidoItems("eq." + orderId, "*,productos(nombre,imagen_url)").enqueue(new retrofit2.Callback<List<OrderRequest.Item>>() {
+        supabaseApi.getPedidoItems("eq." + orderId, "*,productos(nombre,imagen_url)").enqueue(new retrofit2.Callback<List<OrderDTO.Item>>() {
             @Override
-            public void onResponse(Call<List<OrderRequest.Item>> call, Response<List<OrderRequest.Item>> response) {
-                if (response.isSuccessful()) callback.onSuccess(response.body());
-                else callback.onError("Error al obtener detalles: " + response.code());
+            public void onResponse(Call<List<OrderDTO.Item>> call, Response<List<OrderDTO.Item>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Pedido.Item> domainItems = new ArrayList<>();
+                    for (OrderDTO.Item dto : response.body()) {
+                        domainItems.add(dto.toDomain());
+                    }
+                    callback.onSuccess(domainItems);
+                } else callback.onError("Error al obtener detalles: " + response.code());
             }
             @Override
-            public void onFailure(Call<List<OrderRequest.Item>> call, Throwable t) {
+            public void onFailure(Call<List<OrderDTO.Item>> call, Throwable t) {
                 callback.onError(t.getMessage());
             }
         });
@@ -95,7 +132,7 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Override
     public void updateItemQuantity(Long itemId, Integer newQuantity, Callback<Void> callback) {
         if (itemId == null) return;
-        OrderRequest.Item update = new OrderRequest.Item();
+        OrderDTO.Item update = new OrderDTO.Item();
         update.cantidad = newQuantity;
         
         supabaseApi.updateItemPedido("eq." + itemId, update).enqueue(new retrofit2.Callback<Void>() {
@@ -127,39 +164,4 @@ public class OrderRepositoryImpl implements OrderRepository {
         });
     }
 
-    @Override
-    public void addItemToOrder(OrderRequest.Item item, Callback<Void> callback) {
-        if (item == null) return;
-        java.util.List<OrderRequest.Item> list = new java.util.ArrayList<>();
-        list.add(item);
-        supabaseApi.crearItemsPedido(list).enqueue(new retrofit2.Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) callback.onSuccess(null);
-                else callback.onError("Error al agregar item: " + response.code());
-            }
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
-            }
-        });
-    }
-
-    private void insertarItems(List<OrderRequest.Item> items, Callback<Void> callback) {
-        supabaseApi.crearItemsPedido(items).enqueue(new retrofit2.Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    callback.onSuccess(null);
-                } else {
-                    callback.onError("Error al insertar productos del pedido: " + response.code());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError("Fallo de red al insertar productos: " + t.getMessage());
-            }
-        });
-    }
 }

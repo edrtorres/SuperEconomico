@@ -10,19 +10,19 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.uth.supereconomico.R;
-import com.uth.supereconomico.data.remote.models.OrderRequest;
+import com.uth.supereconomico.domain.entities.Pedido;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class OrderItemAdapter extends RecyclerView.Adapter<OrderItemAdapter.ViewHolder> {
 
-    private final List<OrderRequest.Item> items = new ArrayList<>();
+    private final List<Pedido.Item> items = new ArrayList<>();
     private final OnOrderItemClickListener listener;
 
     public interface OnOrderItemClickListener {
-        void onUpdateQuantity(OrderRequest.Item item, int newQuantity);
-        void onDeleteItem(OrderRequest.Item item);
+        void onUpdateQuantity(Pedido.Item item, int newQuantity);
+        void onDeleteItem(Pedido.Item item);
     }
 
     public OrderItemAdapter(OnOrderItemClickListener listener) {
@@ -35,7 +35,7 @@ public class OrderItemAdapter extends RecyclerView.Adapter<OrderItemAdapter.View
         this.isEditable = editable;
     }
 
-    public void setItems(List<OrderRequest.Item> newItems) {
+    public void setItems(List<Pedido.Item> newItems) {
         this.items.clear();
         if (newItems != null) {
             this.items.addAll(newItems);
@@ -52,38 +52,29 @@ public class OrderItemAdapter extends RecyclerView.Adapter<OrderItemAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        OrderRequest.Item item = items.get(position);
+        Pedido.Item item = items.get(position);
         
-        // Priorizar datos del join 'productos' si los campos locales son nulos
-        String nombre = item.nombre;
-        String imagenUrl = item.imagenUrl;
+        holder.tvName.setText(item.getNombre() != null ? item.getNombre() : "Producto #" + item.getProductoId());
         
-        if (item.producto != null) {
-            if (nombre == null || nombre.isEmpty()) nombre = item.producto.nombre;
-            if (imagenUrl == null || imagenUrl.isEmpty()) imagenUrl = item.producto.imagenUrl;
-        }
-
-        holder.tvName.setText(nombre != null ? nombre : "Producto #" + item.productoId);
-        
-        double precio = item.precioUnitario != null ? item.precioUnitario : 0.0;
-        int cantidad = item.cantidad != null ? item.cantidad : 0;
+        double precio = item.getPrecioUnitario() != null ? item.getPrecioUnitario() : 0.0;
+        int cantidad = item.getCantidad() != null ? item.getCantidad() : 0;
         
         holder.tvPrice.setText(String.format(Locale.US, "L. %,.2f", precio));
         holder.tvQuantityLabel.setText("Cant: " + cantidad);
 
-        // Cargar imagen (Soporta URL y Base64)
-        if (imagenUrl != null && !imagenUrl.isEmpty()) {
-            if (imagenUrl.length() > 200) {
+        if (item.getImagenUrl() != null && !item.getImagenUrl().isEmpty()) {
+            String url = item.getImagenUrl();
+            if (url.length() > 200) {
                 try {
-                    byte[] decodedString = Base64.decode(imagenUrl, Base64.DEFAULT);
+                    byte[] decodedString = Base64.decode(url, Base64.DEFAULT);
                     Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
                     holder.ivProduct.setImageBitmap(decodedByte);
                 } catch (Exception e) {
-                    com.bumptech.glide.Glide.with(holder.itemView.getContext()).load(imagenUrl).into(holder.ivProduct);
+                    com.bumptech.glide.Glide.with(holder.itemView.getContext()).load(url).into(holder.ivProduct);
                 }
             } else {
                 com.bumptech.glide.Glide.with(holder.itemView.getContext())
-                        .load(imagenUrl)
+                        .load(url)
                         .placeholder(android.R.drawable.ic_menu_report_image)
                         .into(holder.ivProduct);
             }

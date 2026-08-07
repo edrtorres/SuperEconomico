@@ -27,7 +27,10 @@ ON public.direcciones FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() = perfil_id);
 
--- 3. ACTUALIZAR EL TRIGGER DE REGISTRO PARA PROCESAR EL ARRAY DE DIRECCIONES
+-- 3. ASEGURAR COLUMNAS EN PERFILES
+ALTER TABLE public.perfiles ADD COLUMN IF NOT EXISTS acepto_politicas_registro BOOLEAN DEFAULT FALSE;
+
+-- 4. ACTUALIZAR EL TRIGGER DE REGISTRO PARA PROCESAR EL ARRAY DE DIRECCIONES
 -- Nota: Supabase Auth permite pasar JSON en raw_user_meta_data
 CREATE OR REPLACE FUNCTION public.manejar_nuevo_usuario()
 RETURNS TRIGGER AS $$
@@ -53,7 +56,7 @@ BEGIN
       VALUES (
         new.id,
         direccion_item->>'etiqueta',
-        direccion_item->>'direccion',
+        direccion_item->>'direccion_texto',
         (direccion_item->>'latitud')::DOUBLE PRECISION,
         (direccion_item->>'longitud')::DOUBLE PRECISION
       );

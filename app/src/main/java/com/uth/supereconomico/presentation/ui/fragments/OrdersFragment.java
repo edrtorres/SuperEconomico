@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.google.android.material.tabs.TabLayout;
 import com.uth.supereconomico.R;
-import com.uth.supereconomico.data.remote.models.OrderRequest;
+import com.uth.supereconomico.domain.entities.Pedido;
 import com.uth.supereconomico.presentation.ui.adapters.OrderAdapter;
 import com.uth.supereconomico.presentation.ui.adapters.OrderItemAdapter;
 import com.uth.supereconomico.presentation.viewmodel.OrderViewModel;
@@ -38,7 +38,7 @@ public class OrdersFragment extends Fragment implements
     private TabLayout tabLayout;
     private AlertDialog detailDialog;
     
-    private List<OrderRequest> allOrders = new ArrayList<>();
+    private List<Pedido> allOrders = new ArrayList<>();
     private boolean showingHistory = false;
 
     @Nullable
@@ -83,9 +83,9 @@ public class OrdersFragment extends Fragment implements
         Bundle args = getArguments();
         if (args != null && args.containsKey("order_id")) {
             long targetId = args.getLong("order_id");
-            for (OrderRequest o : allOrders) {
-                if (o.id != null && o.id == targetId) {
-                    boolean isEntregado = "entregado".equalsIgnoreCase(o.estado);
+            for (Pedido o : allOrders) {
+                if (o.getId() != null && o.getId() == targetId) {
+                    boolean isEntregado = "entregado".equalsIgnoreCase(o.getEstado());
                     // Si el pedido está entregado y estamos en la pestaña "En Curso", cambiamos de pestaña
                     if (isEntregado && !showingHistory) {
                         tabLayout.selectTab(tabLayout.getTabAt(1));
@@ -101,9 +101,9 @@ public class OrdersFragment extends Fragment implements
             }
         }
         
-        List<OrderRequest> filtered = new ArrayList<>();
-        for (OrderRequest o : allOrders) {
-            boolean isEntregado = "entregado".equalsIgnoreCase(o.estado);
+        List<Pedido> filtered = new ArrayList<>();
+        for (Pedido o : allOrders) {
+            boolean isEntregado = "entregado".equalsIgnoreCase(o.getEstado());
             if (showingHistory) {
                 if (isEntregado) filtered.add(o);
             } else {
@@ -182,21 +182,21 @@ public class OrdersFragment extends Fragment implements
     }
 
     @Override
-    public void onOrderClick(OrderRequest order) {
+    public void onOrderClick(Pedido order) {
         mostrarDialogoDetallePedido(order);
     }
 
     @Override
-    public void onRepeatClick(OrderRequest order) {
+    public void onRepeatClick(Pedido order) {
         // No mostramos el Toast aquí, lo mostrará el observer al confirmar el éxito
-        viewModel.repeatOrder(order.id);
+        viewModel.repeatOrder(order.getId());
     }
 
-    private void mostrarDialogoDetallePedido(OrderRequest order) {
-        boolean esEditable = !"entregado".equalsIgnoreCase(order.estado);
+    private void mostrarDialogoDetallePedido(Pedido order) {
+        boolean esEditable = !"entregado".equalsIgnoreCase(order.getEstado());
         itemsAdapter.setEditable(esEditable);
         itemsAdapter.setItems(null);
-        viewModel.loadOrderItems(order.id);
+        viewModel.loadOrderItems(order.getId());
         
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_order_detail, null);
         RecyclerView rvItems = dialogView.findViewById(R.id.rvOrderDetailItems);
@@ -204,7 +204,7 @@ public class OrdersFragment extends Fragment implements
         rvItems.setAdapter(itemsAdapter);
         
         detailDialog = new AlertDialog.Builder(getContext())
-                .setTitle("Detalle del Pedido #" + order.id)
+                .setTitle("Detalle del Pedido #" + order.getId())
                 .setView(dialogView)
                 .setPositiveButton("Cerrar", (dialog, which) -> detailDialog = null)
                 .setOnDismissListener(dialog -> detailDialog = null)
@@ -212,12 +212,12 @@ public class OrdersFragment extends Fragment implements
     }
 
     @Override
-    public void onUpdateQuantity(OrderRequest.Item item, int newQuantity) {
+    public void onUpdateQuantity(Pedido.Item item, int newQuantity) {
         // Funcionalidad deshabilitada por requerimiento: solo lectura en detalles de pedido
     }
 
     @Override
-    public void onDeleteItem(OrderRequest.Item item) {
+    public void onDeleteItem(Pedido.Item item) {
         // Funcionalidad deshabilitada por requerimiento: solo lectura en detalles de pedido
     }
 }

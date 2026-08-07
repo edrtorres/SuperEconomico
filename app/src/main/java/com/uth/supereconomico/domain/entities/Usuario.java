@@ -3,6 +3,7 @@ package com.uth.supereconomico.domain.entities;
 public class Usuario {
     public enum Rol {
         CLIENTE,
+        REPARTIDOR,
         ENCARGADO
     }
 

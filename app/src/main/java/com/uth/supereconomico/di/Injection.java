@@ -15,7 +15,6 @@ import com.uth.supereconomico.domain.usecases.RecoverPasswordUseCase;
 import com.uth.supereconomico.domain.usecases.RegisterUseCase;
 import com.uth.supereconomico.domain.usecases.UpdatePasswordUseCase;
 import com.uth.supereconomico.domain.usecases.UpdateProfileUseCase;
-import com.uth.supereconomico.domain.usecases.VerifyOtpUseCase;
 
 public class Injection {
     private static AuthRepository authRepository;
@@ -63,9 +62,6 @@ public class Injection {
         return new RecoverPasswordUseCase(provideAuthRepository());
     }
 
-    public static VerifyOtpUseCase provideVerifyOtpUseCase() {
-        return new VerifyOtpUseCase(provideAuthRepository());
-    }
 
     public static UpdatePasswordUseCase provideUpdatePasswordUseCase() {
         return new UpdatePasswordUseCase(provideAuthRepository());
