@@ -54,6 +54,12 @@
         .order-row { cursor:pointer; border-bottom:1px solid rgba(100,116,139,.14); }
         .order-row:hover { background:rgba(49,120,50,.06); }
         .order-row select { cursor:pointer; }
+        .order-tabs { display:flex; gap:4px; padding:6px; border-radius:18px 18px 0 0; background:rgba(255,255,255,.38); border-bottom:1px solid rgba(100,116,139,.18); }
+        .order-tab { min-width:150px; min-height:46px; display:flex; align-items:center; justify-content:center; gap:8px; padding:0 18px; border-radius:14px 14px 0 0; color:#475569; font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; }
+        .order-tab.active { background:var(--primary); color:#fff; box-shadow:inset 3px 3px 7px rgba(0,0,0,.18), inset -3px -3px 7px rgba(255,255,255,.14); }
+        .order-tab-count { min-width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; padding:0 7px; border-radius:999px; background:rgba(100,116,139,.16); font-size:11px; }
+        .order-tab.active .order-tab-count { background:rgba(255,255,255,.22); }
+        .orders-tabpage { border-radius:0 0 18px 18px!important; }
         .order-detail-line { border-bottom:1px solid rgba(100,116,139,.14); }
         .order-detail-line:last-child { border-bottom:0; }
         .main-panel { min-width:0; display:flex; flex-direction:column; }
@@ -133,13 +139,13 @@
 
             <section id="sec-orders" class="tab-content hidden">
                 <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">Panel de despacho</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Pedidos de clientes</p></div><button onclick="loadData()" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Refrescar</button></div>
-                <div class="flex flex-wrap gap-3 mb-6" role="tablist" aria-label="Estados de pedidos">
-                    <button type="button" id="order-tab-active" class="order-tab bg-primary text-white px-5 py-3 rounded-2xl font-black text-xs" onclick="setOrderTab('active')">Activos <span id="count-orders-active">0</span></button>
-                    <button type="button" id="order-tab-delivered" class="order-tab neu px-5 py-3 rounded-2xl font-black text-xs text-slate-600" onclick="setOrderTab('delivered')">Entregados <span id="count-orders-delivered">0</span></button>
-                    <button type="button" id="order-tab-canceled" class="order-tab neu px-5 py-3 rounded-2xl font-black text-xs text-slate-600" onclick="setOrderTab('canceled')">Cancelados <span id="count-orders-canceled">0</span></button>
+                <div class="order-tabs" role="tablist" aria-label="Estados de pedidos">
+                    <button type="button" id="order-tab-active" class="order-tab active" role="tab" aria-selected="true" onclick="setOrderTab('active')">Activos <span id="count-orders-active" class="order-tab-count">0</span></button>
+                    <button type="button" id="order-tab-delivered" class="order-tab" role="tab" aria-selected="false" onclick="setOrderTab('delivered')">Entregados <span id="count-orders-delivered" class="order-tab-count">0</span></button>
+                    <button type="button" id="order-tab-canceled" class="order-tab" role="tab" aria-selected="false" onclick="setOrderTab('canceled')">Cancelados <span id="count-orders-canceled" class="order-tab-count">0</span></button>
                 </div>
-                <div class="mb-4"><h3 id="orders-tab-title" class="text-xl font-black">Pedidos activos</h3><p id="orders-tab-subtitle" class="text-xs font-bold uppercase tracking-widest text-slate-500">Pendientes, en preparación y en camino</p></div>
-                <div class="bg-white table-shell">
+                <div class="bg-white table-shell orders-tabpage">
+                    <div class="p-6 pb-2"><h3 id="orders-tab-title" class="text-xl font-black">Pedidos activos</h3><p id="orders-tab-subtitle" class="text-xs font-bold uppercase tracking-widest text-slate-500 mt-1">Pendientes, en preparación y en camino</p></div>
                     <table class="w-full text-left"><thead><tr><th class="p-6">Orden / cliente</th><th class="p-6">Total</th><th class="p-6">Repartidor</th><th class="p-6">Estado</th></tr></thead><tbody id="table-orders"></tbody></table>
                     <div id="no-orders" class="hidden p-14 text-center text-slate-400 font-black">No hay pedidos activos</div>
                 </div>
@@ -422,10 +428,8 @@
         document.getElementById('no-orders').textContent = labels[selected][2];
         document.querySelectorAll('.order-tab').forEach(tab => {
             const isActive = tab.id === `order-tab-${selected}`;
-            tab.classList.toggle('bg-primary', isActive);
-            tab.classList.toggle('text-white', isActive);
-            tab.classList.toggle('neu', !isActive);
-            tab.classList.toggle('text-slate-600', !isActive);
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
         });
         renderOrderGroup(groups[selected]);
     }
