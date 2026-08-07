@@ -292,8 +292,13 @@
     async function requireAdmin(session, options = {}) {
         if (!session?.user) return false;
         let data = null;
-        try { data = await fetchCurrentProfile(session); }
-        catch (error) { logError('Validar sesion', error); }
+        try {
+            data = await fetchCurrentProfile(session);
+        } catch (error) {
+            console.warn('Validacion por /me no disponible, usando perfil local', error);
+            const fallback = await db.from('perfiles').select('id,email,nombre_completo,rol').eq('id', session.user.id).single();
+            if (!fallback.error) data = fallback.data;
+        }
         if (data?.rol !== 'encargado') {
             await db.auth.signOut({ scope:'local' });
             showLogin('Esta cuenta no tiene permisos de encargado.');
