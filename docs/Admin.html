@@ -146,7 +146,7 @@
                 </div>
                 <div class="bg-white table-shell orders-tabpage">
                     <div class="p-6 pb-2"><h3 id="orders-tab-title" class="text-xl font-black">Pedidos activos</h3><p id="orders-tab-subtitle" class="text-xs font-bold uppercase tracking-widest text-slate-500 mt-1">Pendientes, en preparación y en camino</p></div>
-                    <table class="w-full text-left"><thead><tr><th class="p-6">Orden / cliente</th><th class="p-6">Total</th><th class="p-6">Repartidor</th><th class="p-6">Estado</th></tr></thead><tbody id="table-orders"></tbody></table>
+                    <table class="w-full text-left"><thead><tr><th class="p-6">Orden / cliente</th><th class="p-6">Dirección</th><th class="p-6">Total</th><th class="p-6">Repartidor</th><th class="p-6">Estado</th></tr></thead><tbody id="table-orders"></tbody></table>
                     <div id="no-orders" class="hidden p-14 text-center text-slate-400 font-black">No hay pedidos activos</div>
                 </div>
             </section>
@@ -214,6 +214,7 @@
     let products = [];
     let orders = [];
     let orderItems = [];
+    let addresses = [];
     let currentOrderTab = 'active';
     let users = [];
     let adminErrors = [];
@@ -324,6 +325,7 @@
             .on('postgres_changes', { event:'UPDATE', schema:'public', table:'pedidos' }, payload => scheduleRealtimeReload(`Pedido actualizado #${payload.new?.id || ''}`))
             .on('postgres_changes', { event:'DELETE', schema:'public', table:'pedidos' }, () => scheduleRealtimeReload('Pedido eliminado'))
             .on('postgres_changes', { event:'*', schema:'public', table:'pedido_items' }, () => scheduleRealtimeReload('Detalle de pedidos'))
+            .on('postgres_changes', { event:'*', schema:'public', table:'direcciones' }, () => scheduleRealtimeReload('Direcciones de entrega'))
             .subscribe(status => {
                 console.info('Realtime status:', status);
                 if (status === 'SUBSCRIBED') setStatus('Panel en tiempo real activo. Esperando eventos de pedidos.');
@@ -372,15 +374,16 @@
 
     async function loadData(options = {}) {
         try {
-            const [catResult, productResult, orderResult, itemResult, userResult] = await Promise.all([
+            const [catResult, productResult, orderResult, itemResult, addressResult, userResult] = await Promise.all([
                 db.from('categorias').select('*').order('nombre'),
                 db.from('productos').select('*').order('nombre'),
                 db.from('pedidos').select('*').order('id', { ascending:false }),
                 db.from('pedido_items').select('*').order('id', { ascending:true }),
+                db.from('direcciones').select('*'),
                 db.functions.invoke('admin-users', { body:{ action:'list' } })
             ]);
             fail(catResult.error); fail(productResult.error); fail(orderResult.error); fail(itemResult.error); fail(userResult.error);
-            categories = catResult.data || []; products = productResult.data || []; orders = orderResult.data || []; orderItems = itemResult.data || []; users = userResult.data?.users || [];
+            categories = catResult.data || []; products = productResult.data || []; orders = orderResult.data || []; orderItems = itemResult.data || []; addresses = addressResult.data || []; users = userResult.data?.users || [];
             renderOrders(); renderCategories(); renderProducts(); renderUsers(); renderDashboard(); renderLogs(); renderIcons();
             if (!options.silent) setStatus('Datos sincronizados correctamente');
         } catch (error) {
@@ -450,7 +453,8 @@
             row.className = 'order-row';
             const drivers = users.filter(u => u.rol === 'repartidor').map(u => `<option value="${safe(u.id)}">${safe(u.nombre_completo || u.email)}</option>`).join('');
             const client = users.find(u => u.id === order.perfil_id);
-            row.innerHTML = `<td class="p-6 font-bold">ORDEN #${safe(order.id)}<div class="text-xs text-slate-500">${safe(client?.nombre_completo || client?.email || 'Cliente')}</div></td><td class="p-6 font-black text-primary">L. ${Number(order.total).toFixed(2)}</td><td class="p-6"><select class="driver p-2 rounded-xl"><option value="">Sin asignar</option>${drivers}</select></td><td class="p-6"><select class="order-status p-2 rounded-xl"><option value="pendiente">Pendiente</option><option value="preparando">Preparando</option><option value="en_camino">En camino</option><option value="entregado">Entregado</option><option value="cancelado">Cancelado</option></select></td>`;
+            const address = formatAddress(addressForOrder(order), true);
+            row.innerHTML = `<td class="p-6 font-bold">ORDEN #${safe(order.id)}<div class="text-xs text-slate-500">${safe(client?.nombre_completo || client?.email || 'Cliente')}</div></td><td class="p-6 max-w-xs"><div class="font-bold text-slate-700 truncate">${safe(address.title)}</div><div class="text-xs text-slate-500 truncate">${safe(address.detail)}</div></td><td class="p-6 font-black text-primary">L. ${Number(order.total).toFixed(2)}</td><td class="p-6"><select class="driver p-2 rounded-xl"><option value="">Sin asignar</option>${drivers}</select></td><td class="p-6"><select class="order-status p-2 rounded-xl"><option value="pendiente">Pendiente</option><option value="preparando">Preparando</option><option value="en_camino">En camino</option><option value="entregado">Entregado</option><option value="cancelado">Cancelado</option></select></td>`;
             row.addEventListener('click', () => openOrderDetail(order.id));
             const status = row.querySelector('.order-status'), driver = row.querySelector('.driver'); status.value = order.estado; driver.value = order.repartidor_id || ''; status.addEventListener('click', event => event.stopPropagation()); driver.addEventListener('click', event => event.stopPropagation()); status.addEventListener('change', () => updateOrder(order.id, {estado:status.value})); driver.addEventListener('change', () => updateOrder(order.id, {repartidor_id:driver.value || null}));
             body.appendChild(row);
@@ -464,19 +468,32 @@
         return Number.isNaN(date.getTime()) ? raw : date.toLocaleString();
     }
 
+    function addressForOrder(order) {
+        if (!order?.direccion_id) return null;
+        return addresses.find(address => String(address.id) === String(order.direccion_id)) || null;
+    }
+
+    function formatAddress(address, compact = false) {
+        if (!address) return { title:'No indicada', detail:'' };
+        const title = address.etiqueta || 'Dirección de entrega';
+        const detail = address.direccion_texto || address.direccion || address.detalle || '';
+        return compact ? { title, detail: detail || 'Sin detalle' } : { title, detail };
+    }
+
     function openOrderDetail(id) {
         const order = orders.find(item => String(item.id) === String(id));
         if (!order) return;
         const client = users.find(u => u.id === order.perfil_id);
         const driver = users.find(u => u.id === order.repartidor_id);
         const items = orderItems.filter(item => String(item.pedido_id) === String(order.id));
+        const address = formatAddress(addressForOrder(order));
         document.getElementById('order-detail-title').textContent = `Orden #${order.id}`;
         document.getElementById('order-detail-client').textContent = client ? `${client.nombre_completo || client.email} - ${client.telefono || 'Sin telefono'}` : 'Cliente no encontrado';
         document.getElementById('order-detail-meta').innerHTML = [
             ['Estado', order.estado || 'Pendiente'],
             ['Repartidor', driver?.nombre_completo || driver?.email || 'Sin asignar'],
             ['Pago', order.metodo_pago || 'No indicado'],
-            ['Direccion ID', order.direccion_id || 'No indicada'],
+            ['Dirección', address.detail ? `${address.title}: ${address.detail}` : address.title],
             ['Fecha', orderDate(order)],
             ['Productos', items.length]
         ].map(([label, value]) => `<div class="neu rounded-2xl p-4"><p class="text-xs font-black uppercase tracking-widest text-slate-500">${safe(label)}</p><p class="font-black mt-1">${safe(value)}</p></div>`).join('');
