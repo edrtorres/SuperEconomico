@@ -231,7 +231,7 @@ on public.perfiles to authenticated;
 
 grant select, insert, update, delete on public.direcciones, public.metodos_pago to authenticated;
 grant select, delete on public.pedidos to authenticated;
-grant update (estado) on public.pedidos to authenticated;
+grant update (estado, repartidor_id) on public.pedidos to authenticated;
 grant select, delete on public.pedido_items to authenticated;
 grant update (cantidad) on public.pedido_items to authenticated;
 grant select, insert on public.aceptaciones_login to authenticated;
