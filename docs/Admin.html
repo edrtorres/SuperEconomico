@@ -291,7 +291,7 @@
     function startRealtime(session) {
         if (realtimeChannel || realtimeBroadcastChannel) return;
         if (session?.access_token && db.realtime?.setAuth) db.realtime.setAuth(session.access_token);
-        realtimeBroadcastChannel = db.channel('cpanel:pedidos', { config:{ private:true } })
+        realtimeBroadcastChannel = db.channel('cpanel:pedidos', { config:{ private:false } })
             .on('broadcast', { event:'INSERT' }, payload => scheduleRealtimeReload(`Pedido nuevo #${payload.payload?.record?.id || ''}`))
             .on('broadcast', { event:'UPDATE' }, payload => scheduleRealtimeReload(`Pedido actualizado #${payload.payload?.record?.id || ''}`))
             .on('broadcast', { event:'DELETE' }, () => scheduleRealtimeReload('Pedido eliminado'))

@@ -3,7 +3,7 @@
 -- Verificacion esperada:
 -- select schemaname, tablename from pg_publication_tables
 -- where pubname = 'supabase_realtime' and tablename in ('pedidos', 'pedido_items');
--- select policyname from pg_policies where schemaname = 'realtime' and tablename = 'messages';
+-- select tgname from pg_trigger where tgname in ('tr_cpanel_broadcast_pedidos', 'tr_cpanel_broadcast_pedido_items');
 
 do $$
 begin
@@ -33,15 +33,6 @@ end $$;
 
 create schema if not exists private;
 
-alter table realtime.messages enable row level security;
-
-drop policy if exists "cpanel recibe eventos de pedidos" on realtime.messages;
-create policy "cpanel recibe eventos de pedidos"
-on realtime.messages
-for select
-to authenticated
-using (topic = 'cpanel:pedidos');
-
 create or replace function private.cpanel_broadcast_pedidos()
 returns trigger
 security definer
@@ -49,14 +40,17 @@ set search_path = ''
 language plpgsql
 as $$
 begin
-  perform realtime.broadcast_changes(
+  perform realtime.send(
+    jsonb_build_object(
+      'schema', TG_TABLE_SCHEMA,
+      'table', TG_TABLE_NAME,
+      'operation', TG_OP,
+      'record', to_jsonb(NEW),
+      'old_record', to_jsonb(OLD)
+    ),
+    TG_OP,
     'cpanel:pedidos',
-    TG_OP,
-    TG_OP,
-    TG_TABLE_NAME,
-    TG_TABLE_SCHEMA,
-    NEW,
-    OLD
+    false
   );
   return null;
 end;
