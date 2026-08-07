@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es" data-build="cpanel-fix-edge-errors-20260806">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin El Económico | Inventario y pedidos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+        <style>
+        :root {
+            --primary:#317832;
+            --primary-dark:#255f27;
+            --bg:#e6e7ee;
+            --light:#ffffff;
+            --dark:#c8ccd8;
+            --ink:#1f2937;
+            --muted:#64748b;
+            --sidebar:#f0f1f6;
+        }
+        * { box-sizing:border-box; }
+        body { margin:0; background:var(--bg)!important; color:var(--ink); }
+        .bg-primary { background-color:var(--primary)!important; }
+        .text-primary { color:var(--primary)!important; }
+        .neu,.bg-white,.bg-slate-50 { background:var(--bg)!important; border:none!important; box-shadow:8px 8px 16px var(--dark),-8px -8px 16px var(--light)!important; }
+        input,select,textarea { background:var(--bg)!important; border:none!important; box-shadow:inset 4px 4px 8px var(--dark),inset -4px -4px 8px var(--light); color:var(--ink); }
+        button { border:none; cursor:pointer; transition:transform .16s ease, box-shadow .16s ease, background .16s ease, color .16s ease; }
+        button:active { transform:translateY(1px); }
+        .app-shell { min-height:100vh; display:grid; grid-template-columns:260px minmax(0, 1fr); }
+        .sidebar { position:sticky; top:0; height:100vh; display:flex; flex-direction:column; gap:18px; padding:20px 16px; background:var(--sidebar); box-shadow:8px 0 22px rgba(31,41,55,.12); z-index:30; }
+        .brand { display:flex; align-items:center; gap:12px; padding:12px 12px 18px; border-bottom:1px solid rgba(100,116,139,.22); }
+        .brand-mark { width:42px; height:42px; border-radius:12px; display:grid; place-items:center; background:var(--primary); color:white; font-size:22px; box-shadow:5px 5px 10px var(--dark),-5px -5px 10px var(--light); }
+        .brand-title { font-size:18px; line-height:1.05; font-weight:900; text-transform:uppercase; letter-spacing:.02em; }
+        .brand-subtitle { font-size:11px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin-top:3px; }
+        .side-menu { display:flex; flex-direction:column; gap:8px; }
+        .side-link { width:100%; min-height:46px; display:flex; align-items:center; gap:12px; padding:0 14px; border-radius:12px; background:var(--bg); color:#475569; font-size:13px; font-weight:900; text-align:left; text-transform:uppercase; letter-spacing:.04em; box-shadow:5px 5px 10px var(--dark),-5px -5px 10px var(--light); }
+        .side-link:hover { color:var(--primary-dark); transform:translateX(2px); }
+        .side-link.active { background:var(--primary); color:white; box-shadow:inset 3px 3px 7px rgba(0,0,0,.18), inset -3px -3px 7px rgba(255,255,255,.16); }
+        .side-icon { width:22px; text-align:center; font-size:16px; }
+        .side-footer { margin-top:auto; display:flex; flex-direction:column; gap:10px; }
+        .action-group { display:flex; align-items:center; gap:10px; }
+        .icon-btn { width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; background:var(--bg); box-shadow:5px 5px 10px var(--dark),-5px -5px 10px var(--light); }
+        .icon-btn svg { width:18px; height:18px; stroke-width:2.5; }
+        .icon-btn.edit { color:var(--primary-dark); }
+        .icon-btn.delete { color:#b91c1c; }
+        .icon-btn:hover { transform:translateY(-1px); }
+        .icon-btn:active { box-shadow:inset 3px 3px 7px var(--dark),inset -3px -3px 7px var(--light); }
+        .dashboard-card { text-align:left; cursor:pointer; }
+        .dashboard-card:hover { transform:translateY(-2px); color:var(--primary-dark); }
+        .error-log-row { border-bottom:1px solid rgba(100,116,139,.16); }
+        .api-frame { width:100%; min-height:72vh; border:0; border-radius:18px; background:white; }
+        .logout-link { color:#b91c1c; }
+        .logout-link:hover { background:#fee2e2; color:#991b1b; }
+        .main-panel { min-width:0; display:flex; flex-direction:column; }
+        .topbar { min-height:72px; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 28px; background:rgba(230,231,238,.88); backdrop-filter:blur(14px); border-bottom:1px solid rgba(100,116,139,.18); position:sticky; top:0; z-index:20; }
+        .page-kicker { color:var(--muted); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.12em; }
+        .page-title { margin:2px 0 0; font-size:24px; line-height:1.15; font-weight:900; }
+        .identity-pill { max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:10px 14px; border-radius:999px; color:var(--primary-dark); font-size:12px; font-weight:900; background:var(--bg); box-shadow:5px 5px 10px var(--dark),-5px -5px 10px var(--light); }
+        .content-wrap { width:100%; max-width:1440px; margin:0 auto; padding:28px; }
+        .table-shell { border-radius:18px!important; overflow-x:auto; }
+        .loader { border:3px solid #f3f3f3; border-top:3px solid var(--primary); border-radius:50%; width:24px; height:24px; animation:spin 1s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @media (max-width: 900px) {
+            .app-shell { grid-template-columns:1fr; }
+            .sidebar { position:relative; height:auto; padding:14px; }
+            .brand { padding-bottom:12px; }
+            .side-menu { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); }
+            .side-footer { margin-top:0; }
+            .side-link { min-height:42px; font-size:11px; }
+            .topbar { position:relative; align-items:flex-start; flex-direction:column; padding:18px; }
+            .identity-pill { max-width:100%; }
+            .content-wrap { padding:18px; }
+        }
+        @media (max-width: 520px) { .side-menu { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body class="min-h-screen font-sans text-slate-900">
+    <main id="login-view" class="min-h-screen flex items-center justify-center p-6">
+        <section class="neu w-full max-w-md rounded-[2.5rem] p-10">
+            <h1 class="text-3xl font-black text-primary text-center">El Económico</h1>
+            <p class="text-center text-xs font-bold uppercase tracking-widest text-slate-500 mt-2">Acceso administrativo</p>
+            <form id="login-form" class="space-y-5 mt-8">
+                <input id="admin-email" type="email" autocomplete="username" required class="w-full p-4 rounded-2xl outline-none" placeholder="Correo electrónico">
+                <input id="admin-password" type="password" autocomplete="current-password" required class="w-full p-4 rounded-2xl outline-none" placeholder="Contraseña">
+                <p id="login-error" class="hidden text-red-600 text-sm font-bold"></p>
+                <button id="login-button" type="submit" class="w-full bg-primary text-white py-4 rounded-2xl font-black">Ingresar</button>
+            </form>
+        </section>
+    </main>
+
+    <div id="admin-view" class="hidden">
+        <div class="app-shell">
+            <aside class="sidebar">
+                <div class="brand">
+                    <div class="brand-mark">🛒</div>
+                    <div>
+                        <div class="brand-title">El Económico</div>
+                        <div class="brand-subtitle">Admin</div>
+                    </div>
+                </div>
+                <nav class="side-menu" aria-label="Menú principal">
+                    <button onclick="switchTab('dashboard')" class="side-link active" id="btn-dashboard"><span class="side-icon">▦</span>DASHBOARD</button>
+                    <button onclick="switchTab('users')" class="side-link" id="btn-users"><span class="side-icon">👤</span>USUARIOS</button>
+                    <button onclick="switchTab('orders')" class="side-link" id="btn-orders"><span class="side-icon">▣</span>PEDIDOS</button>
+                    <button onclick="switchTab('cats')" class="side-link" id="btn-cats"><span class="side-icon">◫</span>CATEGORÍAS</button>
+                    <button onclick="switchTab('prods')" class="side-link" id="btn-prods"><span class="side-icon">▤</span>PRODUCTOS</button>
+                    <button onclick="switchTab('logs')" class="side-link" id="btn-logs"><span class="side-icon">!</span>LOG ERRORES</button>
+                    <button onclick="switchTab('apis')" class="side-link" id="btn-apis"><span class="side-icon">{ }</span>APIS</button>
+                </nav>
+                <div class="side-footer">
+                    <button onclick="logout()" class="side-link logout-link"><span class="side-icon">↩</span>SALIR</button>
+                </div>
+            </aside>
+            <main class="main-panel">
+                <header class="topbar">
+                    <div>
+                        <div class="page-kicker">Panel administrativo</div>
+                        <h1 id="page-title" class="page-title">Dashboard</h1>
+                    </div>
+                    <div id="admin-identity" class="identity-pill"></div>
+                </header>
+                <div class="content-wrap">
+            <div id="status-card" class="mb-8 p-4 rounded-2xl text-center font-black text-xs uppercase tracking-widest bg-green-100 text-green-700">Sesión administrativa protegida</div>
+
+            <section id="sec-dashboard" class="tab-content"><h2 class="text-3xl font-black mb-2">Resumen operativo</h2><p class="text-slate-500 mb-8">Ventas y proceso completo de entrega</p><div id="dashboard-cards" class="grid grid-cols-2 lg:grid-cols-4 gap-5"></div><div class="neu rounded-3xl p-7 mt-7"><h3 class="font-black text-xl mb-4">Flujo de pedidos</h3><div id="delivery-flow" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div></div></section>
+
+            <section id="sec-users" class="tab-content hidden"><div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">Usuarios</h2><p class="text-slate-500">Clientes, repartidores y usuarios del cPanel</p></div><button onclick="newUser()" class="bg-primary text-white px-8 py-3 rounded-2xl font-bold">+ Crear</button></div><div class="bg-white table-shell"><table class="w-full text-left"><thead><tr><th class="p-5">Nombre</th><th class="p-5">Contacto</th><th class="p-5">Rol</th><th class="p-5">Acción</th></tr></thead><tbody id="table-users"></tbody></table></div></section>
+
+            <section id="sec-orders" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">Panel de despacho</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Pedidos de clientes</p></div><button onclick="loadData()" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Refrescar</button></div>
+                <div class="bg-white table-shell">
+                    <table class="w-full text-left"><thead><tr><th class="p-6">Orden / cliente</th><th class="p-6">Total</th><th class="p-6">Repartidor</th><th class="p-6">Estado</th></tr></thead><tbody id="table-orders"></tbody></table>
+                    <div id="no-orders" class="hidden p-20 text-center text-slate-400 font-black">No hay pedidos</div>
+                </div>
+            </section>
+
+            <section id="sec-cats" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-black">Categorías</h2><button onclick="newCategory()" class="bg-primary text-white px-8 py-3 rounded-2xl font-bold">+ Nueva</button></div>
+                <div id="grid-cats" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
+            </section>
+
+            <section id="sec-prods" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-black">Inventario</h2><button onclick="newProduct()" class="bg-primary text-white px-8 py-3 rounded-2xl font-bold">+ Agregar</button></div>
+                <div class="bg-white table-shell"><table class="w-full text-left"><thead><tr><th class="p-6">Foto</th><th class="p-6">Nombre</th><th class="p-6">Precio</th><th class="p-6">Acción</th></tr></thead><tbody id="table-prods"></tbody></table></div>
+            </section>
+
+            <section id="sec-logs" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">Log de errores</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Errores del cPanel y reportes de la app</p></div><button onclick="loadLogs()" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Refrescar</button></div>
+                <div class="bg-white table-shell"><table class="w-full text-left"><thead><tr><th class="p-5">Fecha</th><th class="p-5">Origen</th><th class="p-5">Detalle</th></tr></thead><tbody id="table-logs"></tbody></table><div id="no-logs" class="hidden p-14 text-center text-slate-400 font-black">No hay errores registrados</div></div>
+            </section>
+
+            <section id="sec-apis" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">APIs</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Documentación OpenAPI del proyecto</p></div><a href="./index.html" target="_blank" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Abrir aparte</a></div>
+                <iframe class="api-frame neu" src="./index.html" title="Documentación de APIs"></iframe>
+            </section>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="modal-cat" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-10"><h3 class="text-2xl font-black mb-6 text-primary">Categoría</h3><form id="cat-form" class="space-y-5"><input type="hidden" id="cat-id"><input type="text" id="cat-name" class="w-full p-4 rounded-2xl" placeholder="Nombre" required><input type="file" id="cat-file" accept="image/*" class="w-full text-xs"><div class="flex gap-3"><button type="submit" class="flex-1 bg-primary text-white py-4 rounded-2xl font-bold">Guardar</button><button type="button" onclick="closeMod()" class="flex-1 py-4 rounded-2xl font-bold">Cerrar</button></div></form></div>
+    </div>
+
+    <div id="modal-prod" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-md p-10 max-h-[90vh] overflow-y-auto"><h3 class="text-2xl font-black mb-6 text-primary text-center">Producto</h3><form id="prod-form" class="space-y-4"><input type="hidden" id="prod-id"><input type="text" id="prod-name" class="w-full p-4 rounded-2xl" placeholder="Nombre" required><textarea id="prod-desc" class="w-full p-4 rounded-2xl" rows="2" placeholder="Descripción"></textarea><select id="prod-cat" class="w-full p-4 rounded-2xl" required></select><input type="number" min="0" step="0.01" id="prod-price" class="w-full p-4 rounded-2xl" placeholder="Precio base" required><label class="flex items-center gap-3 p-4"><input type="checkbox" id="prod-is-offer" class="w-6 h-6"><span class="font-black">Oferta activa</span></label><input type="number" min="0" step="0.01" id="prod-price-offer" class="w-full p-4 rounded-2xl" placeholder="Precio de oferta"><input type="file" id="prod-file" accept="image/*" class="w-full text-xs"><div id="p-loader" class="hidden flex items-center gap-2"><div class="loader"></div><span>Guardando...</span></div><div class="flex gap-3"><button type="submit" class="flex-1 bg-primary text-white py-4 rounded-2xl font-bold">Guardar</button><button type="button" onclick="closeMod()" class="flex-1 py-4 rounded-2xl font-bold">Cerrar</button></div></form></div>
+    </div>
+
+    <div id="modal-user" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50"><div class="bg-white rounded-[2.5rem] w-full max-w-md p-9"><h3 class="text-2xl font-black mb-5 text-primary">Usuario</h3><form id="user-form" class="space-y-4"><input type="hidden" id="user-id"><input id="user-name" required class="w-full p-4 rounded-2xl" placeholder="Nombre completo"><input id="user-email" type="email" required class="w-full p-4 rounded-2xl" placeholder="Correo"><input id="user-phone" required class="w-full p-4 rounded-2xl" placeholder="Teléfono"><input id="user-password" type="password" minlength="6" class="w-full p-4 rounded-2xl" placeholder="Contraseña (mínimo 6)"><select id="user-role" class="w-full p-4 rounded-2xl"><option value="cliente">Cliente</option><option value="repartidor">Repartidor</option><option value="encargado">Usuario cPanel</option></select><div class="flex gap-3"><button class="flex-1 bg-primary text-white py-4 rounded-2xl font-bold">Guardar</button><button type="button" onclick="closeMod()" class="flex-1 py-4 rounded-2xl font-bold">Cerrar</button></div></form></div></div>
+
+<script>
+    const SUPABASE_URL = 'https://mvrlcbcydpubhovvrmvf.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12cmxjYmN5ZHB1YmhvdnZybXZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NDA3OTAsImV4cCI6MjA5ODMxNjc5MH0.rNQq1xOA5zGJpMiHlhsXKw5lWLg49qYUtDSC9M7Iha8';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:false } });
+    let categories = [];
+    let products = [];
+    let orders = [];
+    let users = [];
+    let adminErrors = [];
+
+    const fail = error => { if (error) throw error; };
+    const safe = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const imageSource = value => value && value.length > 200 ? `data:image/png;base64,${value}` : (value || '');
+    const setStatus = (message, type = 'ok') => {
+        const card = document.getElementById('status-card');
+        card.textContent = message;
+        card.className = type === 'error'
+            ? 'mb-8 p-4 rounded-2xl text-center font-black text-xs uppercase bg-red-100 text-red-700'
+            : 'mb-8 p-4 rounded-2xl text-center font-black text-xs uppercase tracking-widest bg-green-100 text-green-700';
+    };
+    const logError = (source, error, detail = '') => {
+        const message = error?.message || String(error || 'Error desconocido');
+        adminErrors.unshift({ created_at:new Date().toISOString(), source, message, detail });
+        setStatus(`${source}: ${message}`, 'error');
+        renderLogs();
+        console.error(source, error, detail);
+    };
+
+    async function requireAdmin(session) {
+        if (!session?.user) return false;
+        const { data, error } = await db.from('perfiles').select('id,email,nombre_completo,rol').eq('id', session.user.id).single();
+        if (error || data?.rol !== 'encargado') {
+            await db.auth.signOut({ scope:'local' });
+            showLogin('Esta cuenta no tiene permisos de encargado.');
+            return false;
+        }
+        document.getElementById('admin-identity').textContent = data.nombre_completo || data.email;
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('admin-view').classList.remove('hidden');
+        await loadData();
+        return true;
+    }
+
+    function showLogin(message='') {
+        document.getElementById('admin-view').classList.add('hidden');
+        document.getElementById('login-view').classList.remove('hidden');
+        const error = document.getElementById('login-error');
+        error.textContent = message;
+        error.classList.toggle('hidden', !message);
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const button = document.getElementById('login-button');
+        button.disabled = true;
+        try {
+            const { data, error } = await db.auth.signInWithPassword({ email:document.getElementById('admin-email').value.trim(), password:document.getElementById('admin-password').value });
+            fail(error);
+            await requireAdmin(data.session);
+        } catch (error) { showLogin(error.message || 'No se pudo iniciar sesión.'); }
+        finally { button.disabled = false; }
+    });
+
+    async function logout() { await db.auth.signOut({ scope:'local' }); showLogin(); }
+
+    async function compress(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = reject;
+            reader.onload = event => {
+                const image = new Image();
+                image.onerror = reject;
+                image.onload = () => {
+                    const max = 500;
+                    let width = image.width, height = image.height;
+                    if (width > max) { height *= max / width; width = max; }
+                    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/png').split(',')[1]);
+                };
+                image.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function loadData() {
+        try {
+            const [catResult, productResult, orderResult, userResult] = await Promise.all([
+                db.from('categorias').select('*').order('nombre'),
+                db.from('productos').select('*').order('nombre'),
+                db.from('pedidos').select('*').order('id', { ascending:false }),
+                db.functions.invoke('admin-users', { body:{ action:'list' } })
+            ]);
+            fail(catResult.error); fail(productResult.error); fail(orderResult.error); fail(userResult.error);
+            categories = catResult.data || []; products = productResult.data || []; orders = orderResult.data || []; users = userResult.data?.users || [];
+            renderOrders(); renderCategories(); renderProducts(); renderUsers(); renderDashboard(); renderLogs(); renderIcons();
+            setStatus('Datos sincronizados correctamente');
+        } catch (error) {
+            logError('Carga de datos', error);
+        }
+    }
+
+    function renderIcons() { if (window.lucide) window.lucide.createIcons(); }
+
+    async function loadLogs() {
+        try {
+            const { data, error } = await db.from('logs_errores').select('*').order('created_at', { ascending:false }).limit(50);
+            if (!error && Array.isArray(data)) {
+                adminErrors = [
+                    ...adminErrors.filter(item => item.source === 'cPanel'),
+                    ...data.map(item => ({
+                        created_at:item.created_at || item.fecha || new Date().toISOString(),
+                        source:item.origen || item.source || 'App',
+                        message:item.mensaje || item.message || item.error || 'Error reportado',
+                        detail:item.detalle || item.detail || item.stack || ''
+                    }))
+                ];
+            }
+        } catch (error) {
+            logError('Log de errores', error);
+        } finally {
+            renderLogs();
+        }
+    }
+
+    function renderOrders() {
+        const body = document.getElementById('table-orders'); body.replaceChildren();
+        document.getElementById('no-orders').classList.toggle('hidden', orders.length > 0);
+        for (const order of orders) {
+            const row = document.createElement('tr');
+            const drivers = users.filter(u => u.rol === 'repartidor').map(u => `<option value="${safe(u.id)}">${safe(u.nombre_completo || u.email)}</option>`).join('');
+            const client = users.find(u => u.id === order.perfil_id);
+            row.innerHTML = `<td class="p-6 font-bold">ORDEN #${safe(order.id)}<div class="text-xs text-slate-500">${safe(client?.nombre_completo || client?.email || 'Cliente')}</div></td><td class="p-6 font-black text-primary">L. ${Number(order.total).toFixed(2)}</td><td class="p-6"><select class="driver p-2 rounded-xl"><option value="">Sin asignar</option>${drivers}</select></td><td class="p-6"><select class="order-status p-2 rounded-xl"><option value="pendiente">Pendiente</option><option value="preparando">Preparando</option><option value="en_camino">En camino</option><option value="entregado">Entregado</option><option value="cancelado">Cancelado</option></select></td>`;
+            const status = row.querySelector('.order-status'), driver = row.querySelector('.driver'); status.value = order.estado; driver.value = order.repartidor_id || ''; status.addEventListener('change', () => updateOrder(order.id, {estado:status.value})); driver.addEventListener('change', () => updateOrder(order.id, {repartidor_id:driver.value || null}));
+            body.appendChild(row);
+        }
+    }
+
+    function renderCategories() {
+        const grid = document.getElementById('grid-cats'); grid.replaceChildren();
+        const select = document.getElementById('prod-cat'); select.innerHTML = '<option value="">Categoría...</option>';
+        for (const category of categories) {
+            const card = document.createElement('div'); card.className = 'bg-white p-5 rounded-[2.5rem] text-center';
+            card.innerHTML = `<img src="${safe(imageSource(category.imagen_url))}" alt="" class="w-20 h-20 object-contain mx-auto"><p class="font-black mt-3">${safe(category.nombre)}</p><button class="icon-btn edit edit-category mt-3" title="Editar categoría" aria-label="Editar categoría"><i data-lucide="pencil"></i></button>`;
+            card.querySelector('button').addEventListener('click', () => editCategory(category.id)); grid.appendChild(card);
+            const option = document.createElement('option'); option.value = category.id; option.textContent = category.nombre; select.appendChild(option);
+        }
+    }
+
+    function renderProducts() {
+        const body = document.getElementById('table-prods'); body.replaceChildren();
+        for (const product of products) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td class="p-6"><img src="${safe(imageSource(product.imagen_url))}" alt="" class="h-16 w-16 object-cover rounded-2xl"></td><td class="p-6"><p class="font-black">${safe(product.nombre)}</p></td><td class="p-6 font-black text-primary">L. ${Number(product.precio).toFixed(2)}</td><td class="p-6"><div class="action-group"><button class="icon-btn edit edit-product" title="Editar producto" aria-label="Editar producto"><i data-lucide="pencil"></i></button><button class="icon-btn delete delete-product" title="Eliminar producto" aria-label="Eliminar producto"><i data-lucide="trash-2"></i></button></div></td>`;
+            row.querySelector('.edit-product').addEventListener('click', () => editProduct(product.id)); row.querySelector('.delete-product').addEventListener('click', () => removeRecord('productos', product.id)); body.appendChild(row);
+        }
+    }
+
+    async function updateOrder(id, changes) { const { error } = await db.from('pedidos').update(changes).eq('id', id); if (error) { logError('Actualizar pedido', error); return; } await loadData(); }
+    function renderDashboard() { const sales=orders.filter(o=>o.estado==='entregado').reduce((s,o)=>s+Number(o.total||0),0); const cards=[['Ventas entregadas',`L. ${sales.toFixed(2)}`,'orders'],['Pedidos',orders.length,'orders'],['Clientes',users.filter(u=>u.rol==='cliente').length,'users'],['Repartidores',users.filter(u=>u.rol==='repartidor').length,'users'],['Productos',products.length,'prods'],['Categorías',categories.length,'cats'],['Por entregar',orders.filter(o=>!['entregado','cancelado'].includes(o.estado)).length,'orders'],['Sin asignar',orders.filter(o=>!o.repartidor_id&&!['entregado','cancelado'].includes(o.estado)).length,'orders']]; document.getElementById('dashboard-cards').innerHTML=cards.map(c=>`<button type="button" onclick="switchTab('${safe(c[2])}')" class="dashboard-card neu rounded-3xl p-6"><p class="text-xs uppercase font-bold text-slate-500">${safe(c[0])}</p><p class="text-3xl font-black text-primary mt-2">${safe(c[1])}</p></button>`).join(''); const states=[['pendiente','Pendientes'],['preparando','Preparando'],['en_camino','En camino'],['entregado','Entregados'],['cancelado','Cancelados']]; document.getElementById('delivery-flow').innerHTML=states.map(s=>`<button type="button" onclick="switchTab('orders')" class="p-4 rounded-2xl text-center"><b class="text-2xl">${orders.filter(o=>o.estado===s[0]).length}</b><p class="text-xs uppercase">${s[1]}</p></button>`).join(''); }
+    function renderUsers() { const body=document.getElementById('table-users'); body.replaceChildren(); users.forEach(u=>{const row=document.createElement('tr');row.innerHTML=`<td class="p-5 font-bold">${safe(u.nombre_completo||'Sin nombre')}</td><td class="p-5"><div>${safe(u.email)}</div><div class="text-xs text-slate-500">${safe(u.telefono||'')}</div></td><td class="p-5 uppercase font-bold">${safe(u.rol)}</td><td class="p-5"><div class="action-group"><button class="icon-btn edit edit-user" title="Editar usuario" aria-label="Editar usuario"><i data-lucide="pencil"></i></button><button class="icon-btn delete delete-user" title="Eliminar usuario" aria-label="Eliminar usuario"><i data-lucide="trash-2"></i></button></div></td>`;row.querySelector('.edit-user').onclick=()=>editUser(u.id);row.querySelector('.delete-user').onclick=()=>deleteUser(u.id);body.appendChild(row);}); }
+    function renderLogs() { const body=document.getElementById('table-logs'); if(!body)return; body.replaceChildren(); document.getElementById('no-logs').classList.toggle('hidden', adminErrors.length>0); adminErrors.slice(0,80).forEach(item=>{const row=document.createElement('tr'); row.className='error-log-row'; row.innerHTML=`<td class="p-5 text-xs text-slate-500">${safe(new Date(item.created_at).toLocaleString())}</td><td class="p-5 font-black text-red-700">${safe(item.source)}</td><td class="p-5"><div class="font-bold">${safe(item.message)}</div><div class="text-xs text-slate-500 mt-1">${safe(item.detail)}</div></td>`; body.appendChild(row); }); }
+    function newUser() { document.getElementById('user-form').reset(); document.getElementById('user-id').value=''; document.getElementById('user-password').required=true; openMod('modal-user'); }
+    function editUser(id) { const u=users.find(x=>x.id===id); if(!u)return; document.getElementById('user-id').value=u.id; document.getElementById('user-name').value=u.nombre_completo||''; document.getElementById('user-email').value=u.email||''; document.getElementById('user-phone').value=u.telefono||''; document.getElementById('user-role').value=u.rol; document.getElementById('user-password').value=''; document.getElementById('user-password').required=false; openMod('modal-user'); }
+    async function edgeMessage(error, data) { if(data?.error)return data.error; if(error?.context){try{const payload=await error.context.clone().json(); if(payload?.error)return payload.error;}catch(_){}} return error?.message || 'No se pudo completar la acción'; }
+    async function userAction(body) { const {data,error}=await db.functions.invoke('admin-users',{body}); if(error||data?.error)throw new Error(await edgeMessage(error,data)); }
+    async function deleteUser(id) { if(!confirm('¿Eliminar este usuario y su acceso?'))return; try{await userAction({action:'delete',id});await loadData();setStatus('Usuario eliminado correctamente');}catch(e){logError('Eliminar usuario', e);} }
+    function newCategory() { document.getElementById('cat-form').reset(); document.getElementById('cat-id').value=''; openMod('modal-cat'); }
+    function editCategory(id) { const item=categories.find(value=>value.id===id); if(!item)return; document.getElementById('cat-id').value=item.id; document.getElementById('cat-name').value=item.nombre; openMod('modal-cat'); }
+    function newProduct() { document.getElementById('prod-form').reset(); document.getElementById('prod-id').value=''; openMod('modal-prod'); }
+    function editProduct(id) { const item=products.find(value=>value.id===id); if(!item)return; document.getElementById('prod-id').value=item.id; document.getElementById('prod-name').value=item.nombre; document.getElementById('prod-desc').value=item.descripcion||''; document.getElementById('prod-cat').value=item.categoria_id; document.getElementById('prod-price').value=item.precio; document.getElementById('prod-is-offer').checked=!!item.es_oferta; document.getElementById('prod-price-offer').value=item.precio_oferta||''; openMod('modal-prod'); }
+    function openMod(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeMod() { document.querySelectorAll('.fixed').forEach(modal=>modal.classList.add('hidden')); document.getElementById('p-loader').classList.add('hidden'); }
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-content').forEach(section => section.classList.add('hidden'));
+        document.getElementById(`sec-${tab}`).classList.remove('hidden');
+        document.querySelectorAll('.side-link').forEach(button => button.classList.remove('active'));
+        const active = document.getElementById(`btn-${tab}`);
+        if (active) active.classList.add('active');
+        const labels = { dashboard:'Dashboard', users:'Usuarios', orders:'Pedidos', cats:'Categorías', prods:'Productos', logs:'Log de errores', apis:'APIs' };
+        document.getElementById('page-title').textContent = labels[tab] || 'Panel';
+        if (tab === 'logs') loadLogs();
+    }
+
+    document.getElementById('cat-form').addEventListener('submit', async event => {
+        event.preventDefault(); const id=document.getElementById('cat-id').value; const payload={nombre:document.getElementById('cat-name').value.trim()}; const file=document.getElementById('cat-file').files[0]; if(file)payload.imagen_url=await compress(file);
+        const result=id ? await db.from('categorias').update(payload).eq('id',id) : await db.from('categorias').insert(payload); if(result.error){logError('Guardar categoría', result.error); return;} closeMod(); await loadData(); setStatus('Categoría guardada correctamente');
+    });
+
+    document.getElementById('prod-form').addEventListener('submit', async event => {
+        event.preventDefault(); document.getElementById('p-loader').classList.remove('hidden'); const id=document.getElementById('prod-id').value; const payload={nombre:document.getElementById('prod-name').value.trim(),descripcion:document.getElementById('prod-desc').value.trim(),categoria_id:Number(document.getElementById('prod-cat').value),precio:Number(document.getElementById('prod-price').value),es_oferta:document.getElementById('prod-is-offer').checked,precio_oferta:document.getElementById('prod-price-offer').value?Number(document.getElementById('prod-price-offer').value):null}; const file=document.getElementById('prod-file').files[0]; if(file)payload.imagen_url=await compress(file);
+        const result=id ? await db.from('productos').update(payload).eq('id',id) : await db.from('productos').insert(payload); if(result.error){document.getElementById('p-loader').classList.add('hidden');logError('Guardar producto', result.error);return;} closeMod(); await loadData(); setStatus('Producto guardado correctamente');
+    });
+
+    document.getElementById('user-form').addEventListener('submit', async event => { event.preventDefault(); const id=document.getElementById('user-id').value; const body={action:id?'update':'create',id,name:document.getElementById('user-name').value.trim(),email:document.getElementById('user-email').value.trim(),phone:document.getElementById('user-phone').value.trim(),password:document.getElementById('user-password').value,role:document.getElementById('user-role').value}; try{await userAction(body);closeMod();await loadData();setStatus('Usuario guardado correctamente');}catch(error){logError('Guardar usuario', error);} });
+
+    async function removeRecord(table, id) { if(!confirm('¿Eliminar este registro?'))return; const { error }=await db.from(table).delete().eq('id',id); if(error){logError(`Eliminar ${table}`, error);return;} await loadData(); setStatus('Registro eliminado correctamente'); }
+
+    db.auth.getSession().then(({data}) => data.session ? requireAdmin(data.session) : showLogin());
+    db.auth.onAuthStateChange((event, session) => { if(event==='SIGNED_OUT')showLogin(); else if(event==='TOKEN_REFRESHED' && session)requireAdmin(session); });
+</script>
+</body>
+</html>
