@@ -13,7 +13,7 @@ const json = (body: unknown, status = 200) =>
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (req.method !== "GET") return json({ error: "Método no permitido" }, 405);
+  if (req.method !== "GET") return json({ error: "Metodo no permitido" }, 405);
 
   const authorization = req.headers.get("Authorization") ?? "";
 
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       error: authError,
     } = await caller.auth.getUser();
 
-    if (authError || !user) return json({ error: "Sesión inválida" }, 401);
+    if (authError || !user) return json({ error: "Sesion invalida" }, 401);
 
     const { data: profile, error } = await caller
       .from("perfiles")
@@ -49,6 +49,6 @@ Deno.serve(async (req) => {
       rol: profile.rol,
     });
   } catch {
-    return json({ error: "No se pudo cargar la sesión" }, 500);
+    return json({ error: "No se pudo cargar la sesion" }, 500);
   }
 });
