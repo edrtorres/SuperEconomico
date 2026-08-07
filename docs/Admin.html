@@ -246,6 +246,7 @@
         const message = String(value?.message || value || '').trim();
         const lower = message.toLowerCase();
         if (!message) return 'No se pudo completar la acción. Intenta nuevamente.';
+        if (lower.includes('logs_accesos') || lower.includes('schema cache')) return 'El log de accesos todavia no esta instalado en Supabase. Ejecuta el SQL de logs_accesos.';
         if (lower.includes('404') || lower.includes('not found') || lower.includes('pgrst202')) return 'No encontramos la información solicitada.';
         if (lower.includes('401') || lower.includes('jwt') || lower.includes('sesión') || lower.includes('session')) return 'Tu sesión venció. Inicia sesión nuevamente.';
         if (lower.includes('403') || lower.includes('denied') || lower.includes('forbidden')) return 'No tienes permiso para realizar esta acción.';

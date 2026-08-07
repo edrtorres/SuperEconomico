@@ -25,3 +25,5 @@ using ((select private.es_encargado()));
 
 grant select, insert on public.logs_accesos to authenticated;
 grant usage, select on sequence public.logs_accesos_id_seq to authenticated;
+
+notify pgrst, 'reload schema';
