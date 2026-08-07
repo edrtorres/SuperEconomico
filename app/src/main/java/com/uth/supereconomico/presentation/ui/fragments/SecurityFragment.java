@@ -17,6 +17,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.uth.supereconomico.R;
 import com.uth.supereconomico.presentation.viewmodel.SecurityViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
+import com.uth.supereconomico.utils.UserFriendlyError;
 
 public class SecurityFragment extends Fragment {
 
@@ -48,7 +49,7 @@ public class SecurityFragment extends Fragment {
 
         viewModel.error.observe(getViewLifecycleOwner(), error -> {
             if (error != null) {
-                Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), UserFriendlyError.fromMessage(error), Toast.LENGTH_LONG).show();
             }
         });
 

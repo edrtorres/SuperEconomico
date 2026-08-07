@@ -24,6 +24,7 @@ import com.uth.supereconomico.data.remote.models.DireccionRequest;
 import com.uth.supereconomico.presentation.viewmodel.RegisterViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
 import com.uth.supereconomico.utils.FormateadorTelefono;
+import com.uth.supereconomico.utils.UserFriendlyError;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +83,7 @@ public class RegisterActivity extends AppCompatActivity {
     private void observarViewModel() {
         viewModel.isSuccess.observe(this, correcto -> {
             if (correcto) {
-                Toast.makeText(RegisterActivity.this, "¡Cuenta creada con éxito!", Toast.LENGTH_LONG).show();
+                Toast.makeText(RegisterActivity.this, "Cuenta creada. Te enviamos un correo para confirmar tu email antes de iniciar sesión.", Toast.LENGTH_LONG).show();
                 Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
@@ -90,7 +91,7 @@ public class RegisterActivity extends AppCompatActivity {
             }
         });
 
-        viewModel.error.observe(this, mensaje -> Toast.makeText(RegisterActivity.this, "Error: " + mensaje, Toast.LENGTH_LONG).show());
+        viewModel.error.observe(this, mensaje -> Toast.makeText(RegisterActivity.this, UserFriendlyError.fromMessage(mensaje), Toast.LENGTH_LONG).show());
 
         viewModel.isLoading.observe(this, cargando -> btnRegister.setEnabled(!cargando));
     }

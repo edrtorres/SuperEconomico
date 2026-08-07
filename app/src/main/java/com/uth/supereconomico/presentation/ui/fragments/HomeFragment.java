@@ -38,6 +38,7 @@ import com.uth.supereconomico.presentation.ui.adapters.ProductAdapter;
 import com.uth.supereconomico.presentation.viewmodel.HomeViewModel;
 import com.uth.supereconomico.presentation.viewmodel.OrderViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
+import com.uth.supereconomico.utils.UserFriendlyError;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -177,7 +178,7 @@ public class HomeFragment extends Fragment implements
 
         viewModel.error.observe(getViewLifecycleOwner(), message -> {
             swipeRefresh.setRefreshing(false);
-            if (message != null) Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            if (message != null) Toast.makeText(getContext(), UserFriendlyError.fromMessage(message), Toast.LENGTH_SHORT).show();
         });
 
         orderViewModel.isSuccess.observe(getViewLifecycleOwner(), success -> {

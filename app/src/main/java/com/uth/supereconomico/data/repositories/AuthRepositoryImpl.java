@@ -8,6 +8,7 @@ import com.uth.supereconomico.data.remote.models.UserDTO;
 import com.uth.supereconomico.domain.entities.Usuario;
 import com.uth.supereconomico.domain.repositories.AuthRepository;
 import com.uth.supereconomico.utils.RemoteLogger;
+import com.uth.supereconomico.utils.UserFriendlyError;
 
 import java.io.IOException;
 import java.util.List;
@@ -46,7 +47,7 @@ public class AuthRepositoryImpl implements AuthRepository {
                     fetchUserProfile(auth.getUser().getId(), callback);
                 } else callback.onError(obtenerDetalleError(response, "Correo/teléfono o contraseña incorrectos"));
             }
-            @Override public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) { callback.onError("No se pudo conectar con el servidor"); }
+            @Override public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) { callback.onError(UserFriendlyError.fromThrowable(t)); }
         });
     }
 
@@ -69,14 +70,15 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) {
                 RemoteLogger.log("AuthRepositoryImpl", "login", "Fallo de red", t, null);
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
 
     @Override
     public void register(String email, String password, String nombreCompleto, String telefono, List<DireccionRequest> direcciones, Callback<Void> callback) {
-        authApi.signUp(new AuthApi.SignUpRequest(email, password, nombreCompleto, telefono, direcciones)).enqueue(new retrofit2.Callback<AuthApi.AuthResponse>() {
+        String redirectUrl = "supereconomico://login";
+        authApi.signUp(redirectUrl, new AuthApi.SignUpRequest(email, password, nombreCompleto, telefono, direcciones)).enqueue(new retrofit2.Callback<AuthApi.AuthResponse>() {
             @Override
             public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -95,7 +97,7 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) {
                 RemoteLogger.log("AuthRepositoryImpl", "register", "Fallo de red", t, null);
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -136,7 +138,7 @@ public class AuthRepositoryImpl implements AuthRepository {
 
             @Override
             public void onFailure(Call<List<UserDTO>> call, Throwable t) {
-                if (callback != null) callback.onError(t.getMessage());
+                if (callback != null) callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -167,7 +169,7 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
                 RemoteLogger.log("AuthRepositoryImpl", "recoverPassword", "Fallo de red", t, null);
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -203,7 +205,7 @@ public class AuthRepositoryImpl implements AuthRepository {
 
             @Override
             public void onFailure(Call<List<UserDTO>> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -253,7 +255,7 @@ public class AuthRepositoryImpl implements AuthRepository {
 
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -274,7 +276,7 @@ public class AuthRepositoryImpl implements AuthRepository {
 
             @Override
             public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -290,7 +292,7 @@ public class AuthRepositoryImpl implements AuthRepository {
         }
 
         if (detalle == null || detalle.trim().isEmpty()) {
-            return mensajeBase + ". Codigo: " + response.code();
+            return UserFriendlyError.fromResponse(response, mensajeBase);
         }
 
         String detalleMinuscula = detalle.toLowerCase();
@@ -304,7 +306,11 @@ public class AuthRepositoryImpl implements AuthRepository {
             return "El enlace de recuperacion expiro o no es valido. Solicita uno nuevo.";
         }
 
-        return mensajeBase + ": " + detalle;
+        String friendly = UserFriendlyError.fromMessage(detalle);
+        if (!friendly.equals(detalle)) {
+            return friendly;
+        }
+        return UserFriendlyError.fromResponse(response, mensajeBase);
     }
 
     @Override
@@ -326,13 +332,13 @@ public class AuthRepositoryImpl implements AuthRepository {
                     }
                     callback.onSuccess(null);
                 } else {
-                    callback.onError("Error al actualizar perfil: " + response.code());
+                    callback.onError(UserFriendlyError.fromResponse(response, "No se pudo actualizar tu perfil"));
                 }
             }
 
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -348,13 +354,13 @@ public class AuthRepositoryImpl implements AuthRepository {
                 if (response.isSuccessful()) {
                     callback.onSuccess(null);
                 } else {
-                    callback.onError("Error al actualizar token: " + response.code());
+                    callback.onError(UserFriendlyError.fromResponse(response, "No se pudo actualizar la notificación del dispositivo"));
                 }
             }
 
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -367,13 +373,13 @@ public class AuthRepositoryImpl implements AuthRepository {
                 if (response.isSuccessful()) {
                     callback.onSuccess(response.body());
                 } else {
-                    callback.onError("Error al obtener direcciones: " + response.code());
+                    callback.onError(UserFriendlyError.fromResponse(response, "No se pudieron cargar tus direcciones"));
                 }
             }
 
             @Override
             public void onFailure(Call<List<DireccionRequest>> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -386,13 +392,13 @@ public class AuthRepositoryImpl implements AuthRepository {
                 if (response.isSuccessful()) {
                     callback.onSuccess(null);
                 } else {
-                    callback.onError("Error al agregar dirección: " + response.code());
+                    callback.onError(UserFriendlyError.fromResponse(response, "No se pudo guardar la dirección"));
                 }
             }
 
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -405,13 +411,13 @@ public class AuthRepositoryImpl implements AuthRepository {
                 if (response.isSuccessful()) {
                     callback.onSuccess(null);
                 } else {
-                    callback.onError("Error al eliminar dirección: " + response.code());
+                    callback.onError(UserFriendlyError.fromResponse(response, "No se pudo eliminar la dirección"));
                 }
             }
 
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -428,12 +434,12 @@ public class AuthRepositoryImpl implements AuthRepository {
                     }
                     callback.onSuccess(list);
                 } else {
-                    callback.onError("Error al obtener métodos de pago: " + response.code());
+                    callback.onError(UserFriendlyError.fromResponse(response, "No se pudieron cargar tus métodos de pago"));
                 }
             }
             @Override
             public void onFailure(Call<List<com.uth.supereconomico.data.remote.models.MetodoPagoDTO>> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -444,11 +450,11 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) callback.onSuccess(null);
-                else callback.onError("Error al agregar método de pago: " + response.code());
+                else callback.onError(UserFriendlyError.fromResponse(response, "No se pudo guardar el método de pago"));
             }
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -459,11 +465,11 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) callback.onSuccess(null);
-                else callback.onError("Error al eliminar método de pago: " + response.code());
+                else callback.onError(UserFriendlyError.fromResponse(response, "No se pudo eliminar el método de pago"));
             }
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }

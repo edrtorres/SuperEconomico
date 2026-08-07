@@ -41,6 +41,7 @@ import com.uth.supereconomico.presentation.ui.adapters.AddressAdapter;
 import com.uth.supereconomico.presentation.ui.adapters.PaymentAdapter;
 import com.uth.supereconomico.presentation.viewmodel.ProfileViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
+import com.uth.supereconomico.utils.UserFriendlyError;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -293,7 +294,7 @@ public class ProfileFragment extends Fragment implements
         });
 
         viewModel.error.observe(getViewLifecycleOwner(), error -> {
-            if (error != null) Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+            if (error != null) Toast.makeText(getContext(), UserFriendlyError.fromMessage(error), Toast.LENGTH_LONG).show();
         });
     }
 

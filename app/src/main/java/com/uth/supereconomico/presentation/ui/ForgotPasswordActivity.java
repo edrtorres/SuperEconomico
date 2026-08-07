@@ -14,6 +14,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.uth.supereconomico.R;
 import com.uth.supereconomico.presentation.viewmodel.ForgotPasswordViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
+import com.uth.supereconomico.utils.UserFriendlyError;
 
 public class ForgotPasswordActivity extends AppCompatActivity {
 
@@ -46,7 +47,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     private void observarViewModel() {
         viewModel.isSuccess.observe(this, correcto -> {
             if (correcto) {
-                Toast.makeText(ForgotPasswordActivity.this, "Instrucciones enviadas a tu correo", Toast.LENGTH_LONG).show();
+                Toast.makeText(ForgotPasswordActivity.this, "Te enviamos un correo para restablecer tu contraseña.", Toast.LENGTH_LONG).show();
                 finish();
             }
         });
@@ -68,7 +69,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
     }
 
     private void mostrarError(String mensaje) {
-        tvError.setText(mensaje);
+        tvError.setText(UserFriendlyError.fromMessage(mensaje));
         tvError.setVisibility(View.VISIBLE);
     }
 }

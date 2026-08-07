@@ -16,6 +16,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.uth.supereconomico.R;
 import com.uth.supereconomico.presentation.viewmodel.ResetPasswordViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
+import com.uth.supereconomico.utils.UserFriendlyError;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -65,11 +66,20 @@ public class ResetPasswordActivity extends AppCompatActivity {
             if (tokenHashRecuperacion == null && data.getFragment() != null) {
                 tokenHashRecuperacion = obtenerParametroDeFragmento(data.getFragment(), "token_hash");
             }
+            String errorDescription = data.getQueryParameter("error_description");
+            if (errorDescription == null && data.getFragment() != null) {
+                errorDescription = obtenerParametroDeFragmento(data.getFragment(), "error_description");
+            }
+            if (errorDescription != null && !errorDescription.trim().isEmpty()) {
+                Toast.makeText(this, UserFriendlyError.fromMessage(errorDescription), Toast.LENGTH_LONG).show();
+                finish();
+                return;
+            }
         }
 
         if ((accessToken == null || accessToken.trim().isEmpty())
                 && (tokenHashRecuperacion == null || tokenHashRecuperacion.trim().isEmpty())) {
-            Toast.makeText(this, "Enlace de recuperacion invalido", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "El enlace para restablecer tu contraseña expiró o no es válido. Solicita uno nuevo.", Toast.LENGTH_LONG).show();
             finish();
         }
     }
@@ -92,7 +102,7 @@ public class ResetPasswordActivity extends AppCompatActivity {
     private void observarViewModel() {
         viewModel.isSuccess.observe(this, correcto -> {
             if (correcto) {
-                Toast.makeText(ResetPasswordActivity.this, "Contrasena actualizada con exito", Toast.LENGTH_LONG).show();
+                Toast.makeText(ResetPasswordActivity.this, "Contraseña actualizada con éxito", Toast.LENGTH_LONG).show();
                 startActivity(new Intent(ResetPasswordActivity.this, LoginActivity.class));
                 finishAffinity();
             }
@@ -108,12 +118,12 @@ public class ResetPasswordActivity extends AppCompatActivity {
         String confirmarContrasena = etConfirmPassword.getText().toString().trim();
 
         if (nuevaContrasena.length() < 6) {
-            mostrarError("La contrasena debe tener al menos 6 caracteres");
+            mostrarError("La contraseña debe tener al menos 6 caracteres");
             return;
         }
 
         if (!nuevaContrasena.equals(confirmarContrasena)) {
-            mostrarError("Las contrasenas no coinciden");
+            mostrarError("Las contraseñas no coinciden");
             return;
         }
 
@@ -126,7 +136,7 @@ public class ResetPasswordActivity extends AppCompatActivity {
     }
 
     private void mostrarError(String mensaje) {
-        tvError.setText(mensaje);
+        tvError.setText(UserFriendlyError.fromMessage(mensaje));
         tvError.setVisibility(View.VISIBLE);
     }
 }

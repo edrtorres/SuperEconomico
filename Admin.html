@@ -181,15 +181,27 @@
     const fail = error => { if (error) throw error; };
     const safe = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     const imageSource = value => value && value.length > 200 ? `data:image/png;base64,${value}` : (value || '');
+    const friendlyError = value => {
+        const message = String(value?.message || value || '').trim();
+        const lower = message.toLowerCase();
+        if (!message) return 'No se pudo completar la acción. Intenta nuevamente.';
+        if (lower.includes('404') || lower.includes('not found') || lower.includes('pgrst202')) return 'No encontramos la información solicitada.';
+        if (lower.includes('401') || lower.includes('jwt') || lower.includes('sesión') || lower.includes('session')) return 'Tu sesión venció. Inicia sesión nuevamente.';
+        if (lower.includes('403') || lower.includes('denied') || lower.includes('forbidden')) return 'No tienes permiso para realizar esta acción.';
+        if (lower.includes('non-2xx') || lower.includes('edge function')) return 'El servicio administrativo no pudo completar la solicitud.';
+        if (lower.includes('network') || lower.includes('failed') || lower.includes('timeout')) return 'No se pudo conectar con el servidor. Revisa tu internet.';
+        if (lower.includes('{') || lower.includes('code:') || lower.includes('exception')) return 'No se pudo completar la acción. Intenta nuevamente.';
+        return message;
+    };
     const setStatus = (message, type = 'ok') => {
         const card = document.getElementById('status-card');
-        card.textContent = message;
+        card.textContent = type === 'error' ? friendlyError(message) : message;
         card.className = type === 'error'
             ? 'mb-8 p-4 rounded-2xl text-center font-black text-xs uppercase bg-red-100 text-red-700'
             : 'mb-8 p-4 rounded-2xl text-center font-black text-xs uppercase tracking-widest bg-green-100 text-green-700';
     };
     const logError = (source, error, detail = '') => {
-        const message = error?.message || String(error || 'Error desconocido');
+        const message = friendlyError(error);
         adminErrors.unshift({ created_at:new Date().toISOString(), source, message, detail });
         setStatus(`${source}: ${message}`, 'error');
         renderLogs();

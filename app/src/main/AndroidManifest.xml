@@ -36,7 +36,14 @@
 
         <activity
             android:name=".presentation.ui.LoginActivity"
-            android:exported="false" />
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="supereconomico" android:host="login" />
+            </intent-filter>
+        </activity>
 
         <activity android:name=".presentation.ui.RegisterActivity" />
         <activity android:name=".presentation.ui.SeleccionarUbicacionActivity" />

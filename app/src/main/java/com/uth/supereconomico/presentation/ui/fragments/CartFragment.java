@@ -29,6 +29,7 @@ import com.uth.supereconomico.domain.entities.MetodoPago;
 import com.uth.supereconomico.presentation.ui.adapters.CartAdapter;
 import com.uth.supereconomico.presentation.viewmodel.OrderViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
+import com.uth.supereconomico.utils.UserFriendlyError;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,7 +97,7 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartClickLis
 
         viewModel.error.observe(getViewLifecycleOwner(), error -> {
             if (error != null) {
-                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), UserFriendlyError.fromMessage(error), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -133,14 +134,14 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartClickLis
 
                     @Override
                     public void onError(String message) {
-                        Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), UserFriendlyError.fromMessage(message), Toast.LENGTH_SHORT).show();
                     }
                 });
             }
 
             @Override
             public void onError(String message) {
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), UserFriendlyError.fromMessage(message), Toast.LENGTH_SHORT).show();
             }
         });
     }

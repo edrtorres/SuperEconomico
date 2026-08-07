@@ -14,6 +14,7 @@ import com.uth.supereconomico.MainActivity;
 import com.uth.supereconomico.R;
 import com.uth.supereconomico.presentation.viewmodel.LoginViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
+import com.uth.supereconomico.utils.UserFriendlyError;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -68,7 +69,7 @@ public class LoginActivity extends AppCompatActivity {
             finishAffinity();
         });
 
-        viewModel.error.observe(this, mensaje -> Toast.makeText(LoginActivity.this, mensaje, Toast.LENGTH_LONG).show());
+        viewModel.error.observe(this, mensaje -> Toast.makeText(LoginActivity.this, UserFriendlyError.fromMessage(mensaje), Toast.LENGTH_LONG).show());
 
         viewModel.isLoading.observe(this, cargando -> btnLogin.setEnabled(!cargando));
     }

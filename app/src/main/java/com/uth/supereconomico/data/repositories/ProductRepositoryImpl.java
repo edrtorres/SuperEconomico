@@ -6,6 +6,7 @@ import com.uth.supereconomico.data.remote.models.ProductDTO;
 import com.uth.supereconomico.domain.entities.Categoria;
 import com.uth.supereconomico.domain.entities.Producto;
 import com.uth.supereconomico.domain.repositories.ProductRepository;
+import com.uth.supereconomico.utils.UserFriendlyError;
 import java.util.ArrayList;
 import java.util.List;
 import retrofit2.Call;
@@ -30,13 +31,13 @@ public class ProductRepositoryImpl implements ProductRepository {
                     }
                     callback.onSuccess(domainCategories);
                 } else {
-                    callback.onError("Error al obtener categorías: " + response.code());
+                    callback.onError(UserFriendlyError.fromResponse(response, "No se pudieron cargar las categorías"));
                 }
             }
 
             @Override
             public void onFailure(Call<List<CategoriaDTO>> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -53,13 +54,13 @@ public class ProductRepositoryImpl implements ProductRepository {
                     }
                     callback.onSuccess(domainProducts);
                 } else {
-                    callback.onError("Error al obtener productos: " + response.code());
+                    callback.onError(UserFriendlyError.fromResponse(response, "No se pudieron cargar los productos"));
                 }
             }
 
             @Override
             public void onFailure(Call<List<ProductDTO>> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -76,13 +77,13 @@ public class ProductRepositoryImpl implements ProductRepository {
                     }
                     callback.onSuccess(domainProducts);
                 } else {
-                    callback.onError("Error al obtener productos por categoría: " + response.code());
+                    callback.onError(UserFriendlyError.fromResponse(response, "No se pudieron cargar los productos de esta categoría"));
                 }
             }
 
             @Override
             public void onFailure(Call<List<ProductDTO>> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }

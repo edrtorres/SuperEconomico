@@ -13,7 +13,7 @@ import retrofit2.http.Query;
 public interface AuthApi {
 
     @POST("auth/v1/signup")
-    Call<AuthResponse> signUp(@Body SignUpRequest request);
+    Call<AuthResponse> signUp(@Query("redirect_to") String redirectTo, @Body SignUpRequest request);
 
     @POST("auth/v1/token?grant_type=password")
     Call<AuthResponse> login(@Body LoginRequest request);

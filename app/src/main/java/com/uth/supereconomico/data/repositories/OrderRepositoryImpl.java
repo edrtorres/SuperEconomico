@@ -7,6 +7,7 @@ import com.uth.supereconomico.data.remote.SupabaseApi;
 import com.uth.supereconomico.data.remote.models.OrderDTO;
 import com.uth.supereconomico.domain.entities.Pedido;
 import com.uth.supereconomico.domain.repositories.OrderRepository;
+import com.uth.supereconomico.utils.UserFriendlyError;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
@@ -45,13 +46,13 @@ public class OrderRepositoryImpl implements OrderRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     callback.onSuccess(null);
                 } else {
-                    callback.onError("No se pudo crear el pedido: " + detalleError(response));
+                    callback.onError(detalleError(response));
                 }
             }
 
             @Override
             public void onFailure(Call<Long> call, Throwable t) {
-                callback.onError("Fallo de red: " + t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -67,9 +68,10 @@ public class OrderRepositoryImpl implements OrderRepository {
         }
 
         if (detalle == null || detalle.trim().isEmpty()) {
-            return "codigo " + response.code();
+            return UserFriendlyError.fromResponse(response, "No se pudo crear el pedido");
         }
-        return "codigo " + response.code() + " - " + detalle;
+        String friendly = UserFriendlyError.fromMessage(detalle);
+        return friendly.equals(detalle) ? UserFriendlyError.fromResponse(response, "No se pudo crear el pedido") : friendly;
     }
 
     @Override
@@ -83,11 +85,11 @@ public class OrderRepositoryImpl implements OrderRepository {
                         domainOrders.add(dto.toDomain());
                     }
                     callback.onSuccess(domainOrders);
-                } else callback.onError("Error al obtener pedidos: " + response.code());
+                } else callback.onError(UserFriendlyError.fromResponse(response, "No se pudieron cargar tus pedidos"));
             }
             @Override
             public void onFailure(Call<List<OrderDTO>> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -99,11 +101,11 @@ public class OrderRepositoryImpl implements OrderRepository {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) callback.onSuccess(null);
-                else callback.onError("Error al eliminar pedido: " + response.code());
+                else callback.onError(UserFriendlyError.fromResponse(response, "No se pudo eliminar el pedido"));
             }
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -120,11 +122,11 @@ public class OrderRepositoryImpl implements OrderRepository {
                         domainItems.add(dto.toDomain());
                     }
                     callback.onSuccess(domainItems);
-                } else callback.onError("Error al obtener detalles: " + response.code());
+                } else callback.onError(UserFriendlyError.fromResponse(response, "No se pudo cargar el detalle del pedido"));
             }
             @Override
             public void onFailure(Call<List<OrderDTO.Item>> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -139,11 +141,11 @@ public class OrderRepositoryImpl implements OrderRepository {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) callback.onSuccess(null);
-                else callback.onError("Error al actualizar cantidad: " + response.code());
+                else callback.onError(UserFriendlyError.fromResponse(response, "No se pudo actualizar la cantidad"));
             }
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }
@@ -155,11 +157,11 @@ public class OrderRepositoryImpl implements OrderRepository {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) callback.onSuccess(null);
-                else callback.onError("Error al eliminar item: " + response.code());
+                else callback.onError(UserFriendlyError.fromResponse(response, "No se pudo quitar el producto del pedido"));
             }
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                callback.onError(t.getMessage());
+                callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
     }

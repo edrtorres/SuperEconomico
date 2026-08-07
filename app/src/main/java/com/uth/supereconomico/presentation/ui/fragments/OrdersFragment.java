@@ -21,6 +21,7 @@ import com.uth.supereconomico.presentation.ui.adapters.OrderAdapter;
 import com.uth.supereconomico.presentation.ui.adapters.OrderItemAdapter;
 import com.uth.supereconomico.presentation.viewmodel.OrderViewModel;
 import com.uth.supereconomico.presentation.viewmodel.ViewModelFactory;
+import com.uth.supereconomico.utils.UserFriendlyError;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -176,7 +177,7 @@ public class OrdersFragment extends Fragment implements
         viewModel.error.observe(getViewLifecycleOwner(), message -> {
             swipeRefresh.setRefreshing(false);
             if (message != null) {
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), UserFriendlyError.fromMessage(message), Toast.LENGTH_SHORT).show();
             }
         });
     }
