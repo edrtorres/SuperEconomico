@@ -62,6 +62,7 @@
         .orders-tabpage { border-radius:0 0 18px 18px!important; }
         .order-detail-line { border-bottom:1px solid rgba(100,116,139,.14); }
         .order-detail-line:last-child { border-bottom:0; }
+        .delivery-map { width:100%; min-height:240px; border:0; border-radius:18px; background:#eef2f7; }
         .main-panel { min-width:0; display:flex; flex-direction:column; }
         .topbar { min-height:72px; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 28px; background:rgba(230,231,238,.88); backdrop-filter:blur(14px); border-bottom:1px solid rgba(100,116,139,.18); position:sticky; top:0; z-index:20; }
         .page-kicker { color:var(--muted); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.12em; }
@@ -196,6 +197,7 @@
                 <button type="button" onclick="closeMod()" class="icon-btn" title="Cerrar" aria-label="Cerrar"><i data-lucide="x"></i></button>
             </div>
             <div id="order-detail-meta" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
+            <div id="order-detail-address" class="neu rounded-3xl p-5 mb-6"></div>
             <div id="order-detail-items" class="neu rounded-3xl p-4"></div>
             <div class="flex justify-end mt-6">
                 <div class="min-w-60 neu rounded-3xl p-5 text-right">
@@ -480,13 +482,30 @@
         return compact ? { title, detail: detail || 'Sin detalle' } : { title, detail };
     }
 
+    function addressCoords(address) {
+        if (!address) return null;
+        const lat = Number(address.latitud ?? address.latitude ?? address.lat);
+        const lng = Number(address.longitud ?? address.longitude ?? address.lng);
+        return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+    }
+
+    function renderDeliveryAddress(address) {
+        const formatted = formatAddress(address);
+        const coords = addressCoords(address);
+        const map = coords
+            ? `<iframe class="delivery-map mt-4" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.01}%2C${coords.lat - 0.01}%2C${coords.lng + 0.01}%2C${coords.lat + 0.01}&layer=mapnik&marker=${coords.lat}%2C${coords.lng}"></iframe><a class="inline-block mt-3 text-primary text-xs font-black uppercase tracking-widest" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=16/${coords.lat}/${coords.lng}">Abrir mapa</a>`
+            : '<div class="mt-4 p-5 rounded-2xl bg-slate-100 text-slate-500 font-bold text-sm">Esta dirección no tiene coordenadas para mostrar mapa.</div>';
+        return `<p class="text-xs font-black uppercase tracking-widest text-slate-500">Dirección de entrega</p><h4 class="text-xl font-black mt-1">${safe(formatted.title)}</h4><p class="text-sm font-bold text-slate-600 mt-2">${safe(formatted.detail || 'Sin detalle registrado')}</p>${map}`;
+    }
+
     function openOrderDetail(id) {
         const order = orders.find(item => String(item.id) === String(id));
         if (!order) return;
         const client = users.find(u => u.id === order.perfil_id);
         const driver = users.find(u => u.id === order.repartidor_id);
         const items = orderItems.filter(item => String(item.pedido_id) === String(order.id));
-        const address = formatAddress(addressForOrder(order));
+        const deliveryAddress = addressForOrder(order);
+        const address = formatAddress(deliveryAddress);
         document.getElementById('order-detail-title').textContent = `Orden #${order.id}`;
         document.getElementById('order-detail-client').textContent = client ? `${client.nombre_completo || client.email} - ${client.telefono || 'Sin telefono'}` : 'Cliente no encontrado';
         document.getElementById('order-detail-meta').innerHTML = [
@@ -497,6 +516,7 @@
             ['Fecha', orderDate(order)],
             ['Productos', items.length]
         ].map(([label, value]) => `<div class="neu rounded-2xl p-4"><p class="text-xs font-black uppercase tracking-widest text-slate-500">${safe(label)}</p><p class="font-black mt-1">${safe(value)}</p></div>`).join('');
+        document.getElementById('order-detail-address').innerHTML = renderDeliveryAddress(deliveryAddress);
         document.getElementById('order-detail-items').innerHTML = items.length ? items.map(item => {
             const product = products.find(value => String(value.id) === String(item.producto_id));
             const name = item.nombre || product?.nombre || `Producto #${item.producto_id || ''}`;
