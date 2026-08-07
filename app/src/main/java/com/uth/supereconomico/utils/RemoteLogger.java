@@ -20,12 +20,21 @@ public class RemoteLogger {
     }
 
     public static void log(String className, String method, String errorMessage, Throwable t, String userId) {
+        log(className, method, errorMessage, t, userId, null);
+    }
+
+    public static void log(String className, String method, String errorMessage, Throwable t, String userId, String context) {
         String stackTrace = "";
         if (t != null) {
             stackTrace = Log.getStackTraceString(t);
         }
 
-        ErrorLogRequest logRequest = new ErrorLogRequest(className, method, errorMessage, stackTrace, userId);
+        String finalMessage = errorMessage;
+        if (context != null && !context.trim().isEmpty()) {
+            finalMessage = errorMessage + " | " + context.trim();
+        }
+
+        ErrorLogRequest logRequest = new ErrorLogRequest(className, method, finalMessage, stackTrace, userId);
         
         getApi().logError(logRequest).enqueue(new Callback<Void>() {
             @Override
@@ -44,6 +53,6 @@ public class RemoteLogger {
         });
         
         // También imprimir en Logcat local
-        Log.e(className, method + ": " + errorMessage, t);
+        Log.e(className, method + ": " + finalMessage, t);
     }
 }

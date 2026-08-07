@@ -114,14 +114,16 @@ public class AuthRepositoryImpl implements AuthRepository {
                     callback.onSuccess(null);
                 } else {
                     String errorMsg = obtenerDetalleError(response, "Error en registro");
-                    RemoteLogger.log("AuthRepositoryImpl", "register", errorMsg, null, null);
+                    String context = "email=" + email + " telefono=" + telefono;
+                    RemoteLogger.log("AuthRepositoryImpl", "register", errorMsg, null, null, context);
                     callback.onError(errorMsg);
                 }
             }
 
             @Override
             public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) {
-                RemoteLogger.log("AuthRepositoryImpl", "register", "Fallo de red", t, null);
+                String context = "email=" + email + " telefono=" + telefono;
+                RemoteLogger.log("AuthRepositoryImpl", "register", "Fallo de red", t, null, context);
                 callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });
