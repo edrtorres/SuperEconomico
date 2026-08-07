@@ -133,9 +133,20 @@
 
             <section id="sec-orders" class="tab-content hidden">
                 <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">Panel de despacho</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Pedidos de clientes</p></div><button onclick="loadData()" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Refrescar</button></div>
-                <div class="bg-white table-shell">
+                <div class="mb-4"><h3 class="text-xl font-black">Pedidos activos</h3><p class="text-xs font-bold uppercase tracking-widest text-slate-500">Pendientes, en preparación y en camino</p></div>
+                <div class="bg-white table-shell mb-8">
                     <table class="w-full text-left"><thead><tr><th class="p-6">Orden / cliente</th><th class="p-6">Total</th><th class="p-6">Repartidor</th><th class="p-6">Estado</th></tr></thead><tbody id="table-orders"></tbody></table>
-                    <div id="no-orders" class="hidden p-20 text-center text-slate-400 font-black">No hay pedidos</div>
+                    <div id="no-orders" class="hidden p-14 text-center text-slate-400 font-black">No hay pedidos activos</div>
+                </div>
+                <div class="mb-4"><h3 class="text-xl font-black">Pedidos entregados</h3><p class="text-xs font-bold uppercase tracking-widest text-slate-500">Historial de entregas completadas</p></div>
+                <div class="bg-white table-shell mb-8">
+                    <table class="w-full text-left"><thead><tr><th class="p-6">Orden / cliente</th><th class="p-6">Total</th><th class="p-6">Repartidor</th><th class="p-6">Estado</th></tr></thead><tbody id="table-orders-delivered"></tbody></table>
+                    <div id="no-orders-delivered" class="hidden p-14 text-center text-slate-400 font-black">No hay pedidos entregados</div>
+                </div>
+                <div class="mb-4"><h3 class="text-xl font-black">Pedidos cancelados</h3><p class="text-xs font-bold uppercase tracking-widest text-slate-500">Pedidos que no continuaron el despacho</p></div>
+                <div class="bg-white table-shell">
+                    <table class="w-full text-left"><thead><tr><th class="p-6">Orden / cliente</th><th class="p-6">Total</th><th class="p-6">Repartidor</th><th class="p-6">Estado</th></tr></thead><tbody id="table-orders-canceled"></tbody></table>
+                    <div id="no-orders-canceled" class="hidden p-14 text-center text-slate-400 font-black">No hay pedidos cancelados</div>
                 </div>
             </section>
 
@@ -396,9 +407,18 @@
     }
 
     function renderOrders() {
-        const body = document.getElementById('table-orders'); body.replaceChildren();
-        document.getElementById('no-orders').classList.toggle('hidden', orders.length > 0);
-        for (const order of orders) {
+        const activeOrders = orders.filter(order => !['entregado', 'cancelado'].includes(order.estado));
+        const deliveredOrders = orders.filter(order => order.estado === 'entregado');
+        const canceledOrders = orders.filter(order => order.estado === 'cancelado');
+        renderOrderGroup('table-orders', 'no-orders', activeOrders);
+        renderOrderGroup('table-orders-delivered', 'no-orders-delivered', deliveredOrders);
+        renderOrderGroup('table-orders-canceled', 'no-orders-canceled', canceledOrders);
+    }
+
+    function renderOrderGroup(tableId, emptyId, group) {
+        const body = document.getElementById(tableId); body.replaceChildren();
+        document.getElementById(emptyId).classList.toggle('hidden', group.length > 0);
+        for (const order of group) {
             const row = document.createElement('tr');
             row.className = 'order-row';
             const drivers = users.filter(u => u.rol === 'repartidor').map(u => `<option value="${safe(u.id)}">${safe(u.nombre_completo || u.email)}</option>`).join('');
