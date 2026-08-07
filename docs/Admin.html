@@ -177,6 +177,8 @@
     let orders = [];
     let users = [];
     let adminErrors = [];
+    let realtimeChannel = null;
+    let realtimeReloadTimer = null;
 
     const fail = error => { if (error) throw error; };
     const safe = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -220,6 +222,7 @@
         document.getElementById('login-view').classList.add('hidden');
         document.getElementById('admin-view').classList.remove('hidden');
         await loadData();
+        startRealtime();
         return true;
     }
 
@@ -243,7 +246,41 @@
         finally { button.disabled = false; }
     });
 
-    async function logout() { await db.auth.signOut({ scope:'local' }); showLogin(); }
+    async function logout() { stopRealtime(); await db.auth.signOut({ scope:'local' }); showLogin(); }
+
+    function scheduleRealtimeReload(source) {
+        if (realtimeReloadTimer) clearTimeout(realtimeReloadTimer);
+        realtimeReloadTimer = setTimeout(async () => {
+            realtimeReloadTimer = null;
+            await loadData();
+            setStatus(`${source}: panel actualizado automáticamente`);
+        }, 600);
+    }
+
+    function startRealtime() {
+        if (realtimeChannel) return;
+        realtimeChannel = db.channel('cpanel-pedidos-dashboard')
+            .on('postgres_changes', { event:'*', schema:'public', table:'pedidos' }, () => scheduleRealtimeReload('Pedidos'))
+            .on('postgres_changes', { event:'*', schema:'public', table:'pedido_items' }, () => scheduleRealtimeReload('Detalle de pedidos'))
+            .subscribe(status => {
+                if (status === 'SUBSCRIBED') setStatus('Panel en tiempo real activo');
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    logError('Tiempo real', 'No se pudo activar la actualización automática');
+                    stopRealtime();
+                }
+            });
+    }
+
+    function stopRealtime() {
+        if (realtimeReloadTimer) {
+            clearTimeout(realtimeReloadTimer);
+            realtimeReloadTimer = null;
+        }
+        if (realtimeChannel) {
+            db.removeChannel(realtimeChannel);
+            realtimeChannel = null;
+        }
+    }
 
     async function compress(file) {
         return new Promise((resolve, reject) => {
