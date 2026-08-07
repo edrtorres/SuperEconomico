@@ -455,6 +455,8 @@ $$;
 revoke all on function public.crear_pedido_seguro(bigint, text, jsonb) from public, anon;
 grant execute on function public.crear_pedido_seguro(bigint, text, jsonb) to authenticated;
 
+notify pgrst, 'reload schema';
+
 drop function if exists public.manejar_nuevo_usuario();
 drop function if exists public.recalcular_total_pedido();
 drop function if exists public.notificar_cambio_estado();

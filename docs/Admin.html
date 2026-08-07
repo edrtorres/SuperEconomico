@@ -418,7 +418,8 @@
         if (lower.includes('permission denied') || lower.includes('insufficient privilege') || lower.includes('row-level security') || lower.includes('violates row-level security')) {
             return 'La tabla de accesos existe, pero tu sesión no tiene permiso para leerla.';
         }
-        if (lower.includes('logs_accesos') || lower.includes('schema cache')) return 'La tabla de accesos existe, pero el cPanel no está leyendo bien esa vista. Revisa permisos o publica de nuevo.';
+        if (lower.includes('logs_accesos')) return 'El log de accesos existe, pero el cPanel no lo está leyendo bien. Revisa permisos o publica de nuevo.';
+        if (lower.includes('schema cache')) return 'Supabase todavía no ha recargado el esquema publicado. Vuelve a ejecutar el SQL y refresca la página.';
         if (lower.includes('404') || lower.includes('not found') || lower.includes('pgrst202')) return 'No encontramos la información solicitada.';
         if (lower.includes('401') || lower.includes('jwt') || lower.includes('sesión') || lower.includes('session')) return 'Tu sesión venció. Inicia sesión nuevamente.';
         if (lower.includes('403') || lower.includes('denied') || lower.includes('forbidden')) return 'No tienes permiso para realizar esta acción.';
