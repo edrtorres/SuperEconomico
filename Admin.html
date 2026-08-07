@@ -447,15 +447,15 @@
 
     async function loadLogs() {
         try {
-            const { data, error } = await db.from('logs_errores').select('*').order('created_at', { ascending:false }).limit(50);
+            const { data, error } = await db.from('logs_errores').select('*').order('creado_at', { ascending:false }).limit(50);
             if (error) throw error;
             adminErrors = [
                 ...adminErrors.filter(item => item.source === 'cPanel'),
                 ...(Array.isArray(data) ? data : []).map(item => ({
-                    created_at:item.created_at || item.fecha || new Date().toISOString(),
-                    source:item.origen || item.source || 'App',
-                    message:item.mensaje || item.message || item.error || 'Error reportado',
-                    detail:item.detalle || item.detail || item.stack || ''
+                    created_at:item.creado_at || item.created_at || item.fecha || new Date().toISOString(),
+                    source:item.clase_origen || item.origen || item.source || 'App',
+                    message:item.mensaje_error || item.mensaje || item.message || item.error || 'Error reportado',
+                    detail:[item.metodo, item.stack_trace || item.detalle || item.detail || item.stack || ''].filter(Boolean).join(' - ')
                 }))
             ];
         } catch (error) {
