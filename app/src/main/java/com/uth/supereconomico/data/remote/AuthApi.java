@@ -5,6 +5,7 @@ import com.uth.supereconomico.data.remote.models.DireccionRequest;
 import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
@@ -20,6 +21,9 @@ public interface AuthApi {
 
     @POST("functions/v1/login-by-phone")
     Call<AuthResponse> loginByPhone(@Body PhoneLoginRequest request);
+
+    @GET("functions/v1/me")
+    Call<MeResponse> me();
 
     @POST("auth/v1/verify")
     Call<AuthResponse> verificarRecuperacion(@Body VerificarRecuperacionRequest request);
@@ -140,5 +144,15 @@ public interface AuthApi {
         String email;
         public String getId() { return id; }
         public String getEmail() { return email; }
+    }
+
+    class MeResponse {
+        UserResponse user;
+        com.uth.supereconomico.data.remote.models.UserDTO profile;
+        String rol;
+
+        public UserResponse getUser() { return user; }
+        public com.uth.supereconomico.data.remote.models.UserDTO getProfile() { return profile; }
+        public String getRol() { return rol; }
     }
 }

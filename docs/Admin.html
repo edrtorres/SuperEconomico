@@ -118,6 +118,7 @@
                     <button onclick="switchTab('cats')" class="side-link" id="btn-cats"><span class="side-icon">◫</span>CATEGORÍAS</button>
                     <button onclick="switchTab('prods')" class="side-link" id="btn-prods"><span class="side-icon">▤</span>PRODUCTOS</button>
                     <button onclick="switchTab('logs')" class="side-link" id="btn-logs"><span class="side-icon">!</span>LOG ERRORES</button>
+                    <button onclick="switchTab('access')" class="side-link" id="btn-access"><span class="side-icon">IO</span>LOG ACCESOS</button>
                     <button onclick="switchTab('apis')" class="side-link" id="btn-apis"><span class="side-icon">{ }</span>APIS</button>
                 </nav>
                 <div class="side-footer">
@@ -168,9 +169,14 @@
                 <div class="bg-white table-shell"><table class="w-full text-left"><thead><tr><th class="p-5">Fecha</th><th class="p-5">Origen</th><th class="p-5">Detalle</th></tr></thead><tbody id="table-logs"></tbody></table><div id="no-logs" class="hidden p-14 text-center text-slate-400 font-black">No hay errores registrados</div></div>
             </section>
 
+            <section id="sec-access" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">Log de accesos</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Entradas y salidas de usuarios</p></div><button onclick="loadAccessLogs()" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Refrescar</button></div>
+                <div class="bg-white table-shell"><table class="w-full text-left"><thead><tr><th class="p-5">Fecha</th><th class="p-5">Evento</th><th class="p-5">Usuario</th><th class="p-5">Rol</th><th class="p-5">Origen</th></tr></thead><tbody id="table-access-logs"></tbody></table><div id="no-access-logs" class="hidden p-14 text-center text-slate-400 font-black">No hay accesos registrados</div></div>
+            </section>
+
             <section id="sec-apis" class="tab-content hidden">
-                <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">APIs</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Documentación OpenAPI del proyecto</p></div><a href="./index.html?v=me-role-endpoint" target="_blank" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Abrir aparte</a></div>
-                <iframe class="api-frame neu" src="./index.html?v=me-role-endpoint" title="Documentación de APIs"></iframe>
+                <div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">APIs</h2><p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Documentación OpenAPI del proyecto</p></div><a href="./index.html?v=access-log-role" target="_blank" class="bg-primary text-white px-5 py-2.5 rounded-2xl font-black text-xs">Abrir aparte</a></div>
+                <iframe class="api-frame neu" src="./index.html?v=access-log-role" title="Documentación de APIs"></iframe>
             </section>
                 </div>
             </main>
@@ -223,11 +229,13 @@
     let currentOrderTab = 'active';
     let users = [];
     let adminErrors = [];
+    let accessLogs = [];
+    let currentAdminProfile = null;
     let realtimeChannel = null;
     let realtimeBroadcastChannel = null;
     let realtimeReloadTimer = null;
     let realtimeLastEventAt = null;
-    const adminTabs = ['dashboard', 'users', 'orders', 'cats', 'prods', 'logs', 'apis'];
+    const adminTabs = ['dashboard', 'users', 'orders', 'cats', 'prods', 'logs', 'access', 'apis'];
     const getSavedTab = () => adminTabs.includes(localStorage.getItem('cpanel_active_tab')) ? localStorage.getItem('cpanel_active_tab') : 'dashboard';
 
     const fail = error => { if (error) throw error; };
@@ -261,14 +269,38 @@
         console.error(source, error, detail);
     };
 
-    async function requireAdmin(session) {
+    async function fetchCurrentProfile(session) {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/me`, {
+            method: 'GET',
+            headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${session.access_token}` }
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.error || 'No se pudo validar la sesion.');
+        return payload.profile || null;
+    }
+
+    async function recordAccess(evento, profile = currentAdminProfile) {
+        if (!profile?.id) return;
+        try {
+            const { error } = await db.from('logs_accesos').insert({ usuario_id: profile.id, email: profile.email || '', rol: profile.rol || '', origen: 'cpanel', evento, user_agent: navigator.userAgent });
+            if (error) console.warn('No se pudo registrar acceso', error);
+        } catch (error) {
+            console.warn('No se pudo registrar acceso', error);
+        }
+    }
+
+    async function requireAdmin(session, options = {}) {
         if (!session?.user) return false;
-        const { data, error } = await db.from('perfiles').select('id,email,nombre_completo,rol').eq('id', session.user.id).single();
-        if (error || data?.rol !== 'encargado') {
+        let data = null;
+        try { data = await fetchCurrentProfile(session); }
+        catch (error) { logError('Validar sesion', error); }
+        if (data?.rol !== 'encargado') {
             await db.auth.signOut({ scope:'local' });
             showLogin('Esta cuenta no tiene permisos de encargado.');
             return false;
         }
+        currentAdminProfile = data;
+        if (options.logAccess) await recordAccess('login', data);
         document.getElementById('admin-identity').textContent = data.nombre_completo || data.email;
         document.getElementById('login-view').classList.add('hidden');
         switchTab(getSavedTab(), false);
@@ -293,12 +325,12 @@
         try {
             const { data, error } = await db.auth.signInWithPassword({ email:document.getElementById('admin-email').value.trim(), password:document.getElementById('admin-password').value });
             fail(error);
-            await requireAdmin(data.session);
+            await requireAdmin(data.session, { logAccess:true });
         } catch (error) { showLogin(error.message || 'No se pudo iniciar sesión.'); }
         finally { button.disabled = false; }
     });
 
-    async function logout() { stopRealtime(); await db.auth.signOut({ scope:'local' }); showLogin(); }
+    async function logout() { await recordAccess('logout'); stopRealtime(); currentAdminProfile = null; await db.auth.signOut({ scope:'local' }); showLogin(); }
 
     function scheduleRealtimeReload(source) {
         realtimeLastEventAt = new Date();
@@ -418,6 +450,31 @@
         } finally {
             renderLogs();
         }
+    }
+
+    async function loadAccessLogs() {
+        try {
+            const { data, error } = await db.from('logs_accesos').select('*').order('created_at', { ascending:false }).limit(100);
+            if (error) throw error;
+            accessLogs = Array.isArray(data) ? data : [];
+        } catch (error) {
+            logError('Log de accesos', error);
+        } finally {
+            renderAccessLogs();
+        }
+    }
+
+    function renderAccessLogs() {
+        const body = document.getElementById('table-access-logs');
+        if (!body) return;
+        body.replaceChildren();
+        document.getElementById('no-access-logs').classList.toggle('hidden', accessLogs.length > 0);
+        accessLogs.forEach(item => {
+            const row = document.createElement('tr');
+            const eventLabel = item.evento === 'logout' ? 'Salida' : 'Ingreso';
+            row.innerHTML = '<td class="p-5 text-xs text-slate-500">' + safe(new Date(item.created_at).toLocaleString()) + '</td><td class="p-5 font-black ' + (item.evento === 'logout' ? 'text-red-700' : 'text-green-700') + '">' + safe(eventLabel) + '</td><td class="p-5"><div class="font-bold">' + safe(item.email || 'Usuario') + '</div><div class="text-xs text-slate-500">' + safe(item.usuario_id || '') + '</div></td><td class="p-5 uppercase font-bold">' + safe(item.rol || '') + '</td><td class="p-5 font-bold">' + safe(item.origen || '') + '</td>';
+            body.appendChild(row);
+        });
     }
 
     function renderOrders() {
@@ -580,10 +637,11 @@
         document.querySelectorAll('.side-link').forEach(button => button.classList.remove('active'));
         const active = document.getElementById(`btn-${tab}`);
         if (active) active.classList.add('active');
-        const labels = { dashboard:'Dashboard', users:'Usuarios', orders:'Pedidos', cats:'Categorías', prods:'Productos', logs:'Log de errores', apis:'APIs' };
+        const labels = { dashboard:'Dashboard', users:'Usuarios', orders:'Pedidos', cats:'Categorías', prods:'Productos', logs:'Log de errores', access:'Log de accesos', apis:'APIs' };
         document.getElementById('page-title').textContent = labels[tab] || 'Panel';
         if (persist) localStorage.setItem('cpanel_active_tab', tab);
         if (tab === 'logs') loadLogs();
+        if (tab === 'access') loadAccessLogs();
     }
 
     document.getElementById('cat-form').addEventListener('submit', async event => {
@@ -600,8 +658,8 @@
 
     async function removeRecord(table, id) { if(!confirm('¿Eliminar este registro?'))return; const { error }=await db.from(table).delete().eq('id',id); if(error){logError(`Eliminar ${table}`, error);return;} await loadData(); setStatus('Registro eliminado correctamente'); }
 
-    db.auth.getSession().then(({data}) => data.session ? requireAdmin(data.session) : showLogin());
-    db.auth.onAuthStateChange((event, session) => { if(event==='SIGNED_OUT')showLogin(); else if(event==='TOKEN_REFRESHED' && session)requireAdmin(session); });
+    db.auth.getSession().then(({data}) => data.session ? requireAdmin(data.session, { logAccess:false }) : showLogin());
+    db.auth.onAuthStateChange((event, session) => { if(event==='SIGNED_OUT')showLogin(); else if(event==='TOKEN_REFRESHED' && session)requireAdmin(session, { logAccess:false }); });
 </script>
 </body>
 </html>

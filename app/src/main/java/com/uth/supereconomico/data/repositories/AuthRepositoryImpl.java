@@ -3,6 +3,7 @@ package com.uth.supereconomico.data.repositories;
 import com.uth.supereconomico.data.remote.AuthApi;
 import com.uth.supereconomico.data.remote.SesionSupabase;
 import com.uth.supereconomico.data.remote.SupabaseApi;
+import com.uth.supereconomico.data.remote.models.AccessLogRequest;
 import com.uth.supereconomico.data.remote.models.DireccionRequest;
 import com.uth.supereconomico.data.remote.models.UserDTO;
 import com.uth.supereconomico.domain.entities.Usuario;
@@ -44,7 +45,7 @@ public class AuthRepositoryImpl implements AuthRepository {
                 if (response.isSuccessful() && response.body() != null && response.body().getUser() != null) {
                     AuthApi.AuthResponse auth = response.body();
                     SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
-                    fetchUserProfile(auth.getUser().getId(), callback);
+                    validarSesionCliente(callback);
                 } else callback.onError(obtenerDetalleError(response, "Correo/teléfono o contraseña incorrectos"));
             }
             @Override public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) { callback.onError(UserFriendlyError.fromThrowable(t)); }
@@ -59,7 +60,7 @@ public class AuthRepositoryImpl implements AuthRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     AuthApi.AuthResponse auth = response.body();
                     SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
-                    fetchUserProfile(auth.getUser().getId(), callback);
+                    validarSesionCliente(callback);
                 } else {
                     String errorMsg = obtenerDetalleError(response, "Login fallido");
                     RemoteLogger.log("AuthRepositoryImpl", "login", errorMsg, null, null);
@@ -116,6 +117,47 @@ public class AuthRepositoryImpl implements AuthRepository {
             public void onFailure(Call<Void> call, Throwable t) {
                 android.util.Log.e("AuthRepository", "Error al registrar aceptacion: " + t.getMessage());
             }
+        });
+    }
+
+    private void validarSesionCliente(Callback<Usuario> callback) {
+        authApi.me().enqueue(new retrofit2.Callback<AuthApi.MeResponse>() {
+            @Override
+            public void onResponse(Call<AuthApi.MeResponse> call, Response<AuthApi.MeResponse> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().getProfile() != null) {
+                    UserDTO dto = response.body().getProfile();
+                    if (!"cliente".equalsIgnoreCase(dto.rol)) {
+                        registrarAcceso(dto, "login");
+                        SesionSupabase.cerrarSesion();
+                        currentUser = null;
+                        if (callback != null) callback.onError("Esta cuenta no pertenece a la app de clientes.");
+                        return;
+                    }
+                    currentUser = dto.toDomain();
+                    SesionSupabase.actualizarIdUsuario(dto.id);
+                    registrarAcceso(dto, "login");
+                    if (callback != null) callback.onSuccess(currentUser);
+                } else {
+                    SesionSupabase.cerrarSesion();
+                    currentUser = null;
+                    if (callback != null) callback.onError(UserFriendlyError.fromResponse(response, "No se pudo validar tu cuenta"));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<AuthApi.MeResponse> call, Throwable t) {
+                SesionSupabase.cerrarSesion();
+                currentUser = null;
+                if (callback != null) callback.onError(UserFriendlyError.fromThrowable(t));
+            }
+        });
+    }
+
+    private void registrarAcceso(UserDTO user, String evento) {
+        if (user == null || user.id == null) return;
+        supabaseApi.logAccess(new AccessLogRequest(user.id, user.email, user.rol, "app_cliente", evento)).enqueue(new retrofit2.Callback<Void>() {
+            @Override public void onResponse(Call<Void> call, Response<Void> response) { }
+            @Override public void onFailure(Call<Void> call, Throwable t) { }
         });
     }
 
@@ -477,6 +519,13 @@ public class AuthRepositoryImpl implements AuthRepository {
     @Override
     public void logout() {
         String accessToken = SesionSupabase.obtenerTokenAcceso();
+        if (currentUser != null) {
+            UserDTO user = new UserDTO();
+            user.id = currentUser.getId();
+            user.email = currentUser.getEmail();
+            user.rol = currentUser.getRol().name().toLowerCase();
+            registrarAcceso(user, "logout");
+        }
         if (accessToken != null) {
             authApi.logout("Bearer " + accessToken).enqueue(new retrofit2.Callback<Void>() {
                 @Override public void onResponse(Call<Void> call, Response<Void> response) { }

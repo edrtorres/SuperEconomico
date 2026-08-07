@@ -162,7 +162,7 @@ components:
         direccion: {type: string}
         descripcion: {type: string}
         avatar_url: {type: string}
-        rol: {type: string, enum: [cliente, encargado]}
+        rol: {type: string, enum: [cliente, repartidor, encargado]}
 
     Direccion:
       type: object
@@ -197,6 +197,18 @@ components:
         mensaje_error: {type: string}
         stack_trace: {type: string}
         usuario_id: {type: string}
+
+    AccessLog:
+      type: object
+      properties:
+        id: {type: integer}
+        usuario_id: {type: string, format: uuid}
+        email: {type: string}
+        rol: {type: string, enum: [cliente, repartidor, encargado]}
+        origen: {type: string, example: app_cliente}
+        evento: {type: string, enum: [login, logout]}
+        user_agent: {type: string}
+        created_at: {type: string, format: date-time}
 
 paths:
   /auth/v1/signup:
@@ -724,6 +736,37 @@ paths:
             schema: {$ref: "#/components/schemas/LogErrorRequest"}
       responses:
         "201": {description: Error registrado}
+
+  /rest/v1/logs_accesos:
+    get:
+      summary: Listar accesos de usuarios
+      description: Disponible para usuarios con rol encargado en el cPanel.
+      tags: [Soporte]
+      parameters:
+        - in: query
+          name: order
+          schema: {type: string, example: "created_at.desc"}
+        - in: query
+          name: limit
+          schema: {type: integer, example: 100}
+      responses:
+        "200":
+          description: Lista de ingresos y salidas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/AccessLog"}
+    post:
+      summary: Registrar ingreso o salida
+      description: Inserta el evento de acceso del usuario autenticado.
+      tags: [Soporte]
+      requestBody:
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/AccessLog"}
+      responses:
+        "201": {description: Acceso registrado}
 
   /functions/v1/admin-users:
     post:

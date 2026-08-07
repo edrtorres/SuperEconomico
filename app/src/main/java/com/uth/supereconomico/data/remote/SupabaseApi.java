@@ -2,6 +2,7 @@ package com.uth.supereconomico.data.remote;
 
 import com.uth.supereconomico.data.remote.models.CategoriaDTO;
 import com.google.gson.JsonObject;
+import com.uth.supereconomico.data.remote.models.AccessLogRequest;
 import com.uth.supereconomico.data.remote.models.DireccionRequest;
 import com.uth.supereconomico.data.remote.models.ErrorLogRequest;
 import com.uth.supereconomico.data.remote.models.OrderDTO;
@@ -133,4 +134,7 @@ public interface SupabaseApi {
 
     @POST("rest/v1/logs_errores")
     Call<Void> logError(@Body ErrorLogRequest request);
+
+    @POST("rest/v1/logs_accesos")
+    Call<Void> logAccess(@Body AccessLogRequest request);
 }
