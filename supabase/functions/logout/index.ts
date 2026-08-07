@@ -43,14 +43,18 @@ Deno.serve(async (req) => {
       .eq("id", user.id)
       .maybeSingle();
 
-    await service.from("logs_accesos").insert({
-      usuario_id: user.id,
-      email: profile?.email ?? user.email ?? "",
-      rol: profile?.rol ?? "",
-      origen: origin || "app_cliente",
-      evento: "logout",
-      user_agent: req.headers.get("user-agent") ?? "",
-    });
+    try {
+      await service.from("logs_accesos").insert({
+        usuario_id: user.id,
+        email: profile?.email ?? user.email ?? "",
+        rol: profile?.rol ?? "",
+        origen: origin || "app_cliente",
+        evento: "logout",
+        user_agent: req.headers.get("user-agent") ?? "",
+      });
+    } catch (error) {
+      console.error("No se pudo registrar la salida", error);
+    }
 
     await caller.auth.signOut({ scope: "local" }).catch(() => null);
     return json({ ok: true });

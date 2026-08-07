@@ -287,17 +287,18 @@
             body: JSON.stringify({ email, password, origin: 'cpanel' })
         });
         const payload = await response.json().catch(() => ({}));
-        if (!response.ok || !payload.access_token || !payload.refresh_token) {
-            if (response.status === 404 || response.status === 405) {
-                const native = await db.auth.signInWithPassword({ email, password });
-                fail(native.error);
-                return native.data.session;
-            }
-            throw new Error(payload?.error || 'No se pudo iniciar sesion.');
+        if (response.ok && payload.access_token && payload.refresh_token) {
+            const { data, error } = await db.auth.setSession({ access_token: payload.access_token, refresh_token: payload.refresh_token });
+            fail(error);
+            return data.session;
         }
-        const { data, error } = await db.auth.setSession({ access_token: payload.access_token, refresh_token: payload.refresh_token });
-        fail(error);
-        return data.session;
+
+        const native = await db.auth.signInWithPassword({ email, password });
+        if (native.data?.session && !native.error) {
+            return native.data.session;
+        }
+
+        throw new Error(payload?.error || native.error?.message || 'No se pudo iniciar sesion.');
     }
 
     async function requireAdmin(session, options = {}) {

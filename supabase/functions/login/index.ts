@@ -18,14 +18,18 @@ const logAccess = async (
   req: Request,
 ) => {
   if (!profile?.id) return;
-  await service.from("logs_accesos").insert({
-    usuario_id: profile.id,
-    email: profile.email ?? "",
-    rol: profile.rol ?? "",
-    origen: origin || "app_cliente",
-    evento: "login",
-    user_agent: req.headers.get("user-agent") ?? "",
-  });
+  try {
+    await service.from("logs_accesos").insert({
+      usuario_id: profile.id,
+      email: profile.email ?? "",
+      rol: profile.rol ?? "",
+      origen: origin || "app_cliente",
+      evento: "login",
+      user_agent: req.headers.get("user-agent") ?? "",
+    });
+  } catch (error) {
+    console.error("No se pudo registrar el acceso", error);
+  }
 };
 
 Deno.serve(async (req) => {

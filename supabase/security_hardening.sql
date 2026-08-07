@@ -206,6 +206,12 @@ on public.logs_errores for insert
 to authenticated
 with check (usuario_id is null or usuario_id = (select auth.uid()));
 
+drop policy if exists logs_insercion_publica on public.logs_errores;
+create policy logs_insercion_publica
+on public.logs_errores for insert
+to anon, authenticated
+with check (usuario_id is null or usuario_id = (select auth.uid()));
+
 create policy logs_lectura_encargado
 on public.logs_errores for select
 to authenticated
@@ -229,7 +235,8 @@ grant update (estado) on public.pedidos to authenticated;
 grant select, delete on public.pedido_items to authenticated;
 grant update (cantidad) on public.pedido_items to authenticated;
 grant select, insert on public.aceptaciones_login to authenticated;
-grant select, insert on public.logs_errores to authenticated;
+grant insert on public.logs_errores to anon, authenticated;
+grant select on public.logs_errores to authenticated;
 
 alter default privileges for role postgres in schema public
   revoke select, insert, update, delete on tables from anon, authenticated;
