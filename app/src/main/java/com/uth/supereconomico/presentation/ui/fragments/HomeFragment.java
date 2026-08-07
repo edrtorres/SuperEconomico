@@ -9,6 +9,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.OvershootInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
@@ -54,6 +56,10 @@ public class HomeFragment extends Fragment implements
     private TextView tvGreeting;
     private EditText etSearch;
     private SwipeRefreshLayout swipeRefresh;
+    private RecyclerView rvCategories;
+    private RecyclerView rvProducts;
+    private View skeletonCategories;
+    private View skeletonProducts;
     
     private boolean isAhorroActive = false;
     private View toggleThumb;
@@ -73,6 +79,8 @@ public class HomeFragment extends Fragment implements
         swipeRefresh = view.findViewById(R.id.swipeRefreshHome);
         customToggle = view.findViewById(R.id.customToggle);
         toggleThumb = view.findViewById(R.id.toggleThumb);
+        skeletonCategories = view.findViewById(R.id.skeleton_categories);
+        skeletonProducts = view.findViewById(R.id.skeleton_products);
         
         setupGreeting();
         setupSearch();
@@ -85,6 +93,7 @@ public class HomeFragment extends Fragment implements
 
         swipeRefresh.setOnRefreshListener(() -> viewModel.loadData());
         
+        showSkeletonLoading(true);
         viewModel.loadData();
         
         return view;
@@ -152,20 +161,46 @@ public class HomeFragment extends Fragment implements
     }
 
     private void setupCategories(View view) {
-        RecyclerView rvCategories = view.findViewById(R.id.rv_categories);
+        rvCategories = view.findViewById(R.id.rv_categories);
         rvCategories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         categoryAdapter = new CategoryAdapter(new ArrayList<>(), this);
         rvCategories.setAdapter(categoryAdapter);
     }
 
     private void setupProducts(View view) {
-        RecyclerView rvProducts = view.findViewById(R.id.rv_products);
+        rvProducts = view.findViewById(R.id.rv_products);
         rvProducts.setLayoutManager(new GridLayoutManager(getContext(), 2));
         productAdapter = new ProductAdapter(new ArrayList<>(), this);
         rvProducts.setAdapter(productAdapter);
     }
 
+    private void showSkeletonLoading(boolean loading) {
+        if (rvCategories == null || rvProducts == null || skeletonCategories == null || skeletonProducts == null) return;
+        rvCategories.setVisibility(loading ? View.GONE : View.VISIBLE);
+        rvProducts.setVisibility(loading ? View.GONE : View.VISIBLE);
+        skeletonCategories.setVisibility(loading ? View.VISIBLE : View.GONE);
+        skeletonProducts.setVisibility(loading ? View.VISIBLE : View.GONE);
+
+        if (loading) {
+            startSkeletonPulse(skeletonCategories);
+            startSkeletonPulse(skeletonProducts);
+        } else {
+            skeletonCategories.clearAnimation();
+            skeletonProducts.clearAnimation();
+        }
+    }
+
+    private void startSkeletonPulse(View view) {
+        AlphaAnimation pulse = new AlphaAnimation(0.45f, 1f);
+        pulse.setDuration(650);
+        pulse.setRepeatMode(Animation.REVERSE);
+        pulse.setRepeatCount(Animation.INFINITE);
+        view.startAnimation(pulse);
+    }
+
     private void observeViewModel() {
+        viewModel.isLoading.observe(getViewLifecycleOwner(), this::showSkeletonLoading);
+
         viewModel.categories.observe(getViewLifecycleOwner(), categories -> {
             categoryAdapter.updateCategories(categories);
             swipeRefresh.setRefreshing(false);
