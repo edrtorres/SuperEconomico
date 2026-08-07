@@ -231,7 +231,7 @@ on public.perfiles to authenticated;
 
 grant select, insert, update, delete on public.direcciones, public.metodos_pago to authenticated;
 grant select, delete on public.pedidos to authenticated;
-grant update (estado, repartidor_id) on public.pedidos to authenticated;
+grant update (estado) on public.pedidos to authenticated;
 grant select, delete on public.pedido_items to authenticated;
 grant update (cantidad) on public.pedido_items to authenticated;
 grant select, insert on public.aceptaciones_login to authenticated;
@@ -343,6 +343,41 @@ after update of estado on public.pedidos
 for each row
 when (old.estado is distinct from new.estado)
 execute function private.notificar_cambio_estado();
+
+create or replace function public.asignar_repartidor_pedido(
+  p_pedido_id bigint,
+  p_repartidor_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not (select private.es_encargado()) then
+    raise exception 'No tiene permiso para asignar repartidores';
+  end if;
+
+  if p_repartidor_id is not null and not exists (
+    select 1
+    from public.perfiles
+    where id = p_repartidor_id
+      and rol = 'repartidor'::public.rol_usuario
+  ) then
+    raise exception 'El usuario asignado no es repartidor';
+  end if;
+
+  update public.pedidos
+  set repartidor_id = p_repartidor_id
+  where id = p_pedido_id;
+
+  if not found then
+    raise exception 'Pedido no encontrado';
+  end if;
+end;
+$$;
+revoke all on function public.asignar_repartidor_pedido(bigint, uuid) from public, anon;
+grant execute on function public.asignar_repartidor_pedido(bigint, uuid) to authenticated;
 
 create or replace function public.crear_pedido_seguro(
   p_direccion_id bigint,
