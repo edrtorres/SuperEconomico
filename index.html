@@ -98,6 +98,12 @@ components:
               producto_id: {type: integer}
               cantidad: {type: integer}
 
+    PedidosActivosRepartidorRequest:
+      type: object
+      required: [p_repartidor_id]
+      properties:
+        p_repartidor_id: {type: string, format: uuid}
+
     AdminUsersRequest:
       type: object
       properties:
@@ -460,6 +466,15 @@ paths:
           name: perfil_id
           schema: {type: string, example: "eq.uuid"}
         - in: query
+          name: id
+          schema: {type: string, example: "eq.123"}
+        - in: query
+          name: repartidor_id
+          schema: {type: string, example: "eq.uuid-repartidor"}
+        - in: query
+          name: estado
+          schema: {type: string, example: "not.in.(entregado,cancelado)"}
+        - in: query
           name: select
           schema: {type: string, default: "*"}
         - in: query
@@ -562,6 +577,27 @@ paths:
             schema: {$ref: "#/components/schemas/CrearPedidoSeguroRequest"}
       responses:
         "200": {description: ID del pedido creado}
+
+  /rest/v1/rpc/pedidos_activos_por_repartidor:
+    post:
+      summary: Pedidos activos asignados a un repartidor
+      description: Devuelve los pedidos del repartidor indicado cuyo estado no sea entregado ni cancelado.
+      tags: [Pedidos]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/PedidosActivosRepartidorRequest"}
+            example:
+              p_repartidor_id: "00000000-0000-0000-0000-000000000000"
+      responses:
+        "200":
+          description: Lista de pedidos pendientes, en preparacion o en camino asignados al repartidor
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/Pedido"}
 
   /rest/v1/direcciones:
     get:
