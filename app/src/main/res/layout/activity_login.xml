@@ -1,9 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+﻿<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_fondo_cliente">
+    android:background="@drawable/bg_fondo_cliente"
+    tools:context=".presentation.ui.LoginActivity">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -25,7 +26,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="Iniciar sesion"
+                android:text="Iniciar sesión"
                 android:textColor="@color/verde_supermercado_oscuro"
                 android:textSize="36sp"
                 android:textStyle="bold" />
@@ -67,7 +68,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="Contrasena"
+                android:hint="Contraseña"
                 app:boxStrokeColor="@color/selector_borde_campo"
                 app:endIconMode="password_toggle"
                 app:startIconDrawable="@drawable/icono_contrasena"
@@ -91,7 +92,7 @@
                 android:layout_height="48dp"
                 android:layout_gravity="end"
                 android:layout_marginTop="4dp"
-                android:text="Olvidaste tu contrasena?"
+                android:text="¿Olvidaste tu contraseña?"
                 android:textAllCaps="false"
                 android:textColor="@color/verde_supermercado"
                 android:textStyle="bold" />
@@ -111,7 +112,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:buttonTint="@color/verde_supermercado"
-                android:text="Acepto politica de privacidad y uso de GPS"
+                android:text="Acepto política de privacidad y uso de GPS"
                 android:textColor="@color/text_field"
                 android:textSize="14sp" />
 
@@ -129,7 +130,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:layout_marginTop="8dp"
-                android:text="No tienes cuenta? Crear cuenta"
+                android:text="¿No tienes cuenta? Crear cuenta"
                 android:textAllCaps="false"
                 android:textColor="@color/verde_supermercado" />
         </LinearLayout>

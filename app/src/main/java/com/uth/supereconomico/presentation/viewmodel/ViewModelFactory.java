@@ -10,6 +10,7 @@ import com.uth.supereconomico.domain.usecases.RecoverPasswordUseCase;
 import com.uth.supereconomico.domain.usecases.RegisterUseCase;
 import com.uth.supereconomico.domain.usecases.UpdatePasswordUseCase;
 import com.uth.supereconomico.domain.usecases.UpdateProfileUseCase;
+import com.uth.supereconomico.presentation.viewmodel.repartidor.HomeRepartidorViewModel;
 
 public class ViewModelFactory implements ViewModelProvider.Factory {
     
@@ -39,6 +40,8 @@ public class ViewModelFactory implements ViewModelProvider.Factory {
             return (T) new OrderViewModel(Injection.provideAuthRepository(), Injection.provideOrderRepository());
         } else if (modelClass.isAssignableFrom(SecurityViewModel.class)) {
             return (T) new SecurityViewModel(Injection.provideAuthRepository());
+        } else if (modelClass.isAssignableFrom(HomeRepartidorViewModel.class)) {
+            return (T) new HomeRepartidorViewModel(Injection.provideRepartidorRepository());
         }
         throw new IllegalArgumentException("Unknown ViewModel class: " + modelClass.getName());
     }

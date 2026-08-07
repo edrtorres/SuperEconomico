@@ -1,9 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+﻿<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_fondo_cliente">
+    android:background="@drawable/bg_fondo_cliente"
+    tools:context=".presentation.ui.VerifyOtpActivity">
 
     <ImageButton
         android:id="@+id/btnBack"
@@ -12,7 +13,8 @@
         android:layout_marginStart="28dp"
         android:layout_marginTop="28dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_back_custom"
+        android:contentDescription="@string/back_description"
+        android:src="@drawable/ic_back_curved"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/icono_cliente" />
@@ -47,7 +49,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="42dp"
-                android:text="Codigo de verificacion"
+                android:text="Código de verificación"
                 android:textColor="@color/verde_supermercado"
                 android:textSize="19sp"
                 android:textStyle="bold" />
@@ -58,7 +60,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                android:hint="Codigo OTP"
+                android:hint="Código OTP"
                 app:boxStrokeColor="@color/selector_borde_campo"
                 app:startIconDrawable="@drawable/icono_codigo"
                 app:startIconTint="@color/icono_cliente">
@@ -86,4 +88,3 @@
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
-

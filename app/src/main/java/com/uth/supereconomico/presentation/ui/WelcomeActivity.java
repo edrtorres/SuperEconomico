@@ -69,7 +69,16 @@ public class WelcomeActivity extends AppCompatActivity {
 
     private void abrirLogin() {
         if (com.uth.supereconomico.data.remote.SesionSupabase.haySesionActiva()) {
-            startActivity(new Intent(WelcomeActivity.this, com.uth.supereconomico.MainActivity.class));
+            String rol = com.uth.supereconomico.data.remote.SesionSupabase.obtenerRol();
+            Intent intent;
+            if ("repartidor".equalsIgnoreCase(rol)) {
+                intent = new Intent(WelcomeActivity.this, com.uth.supereconomico.presentation.ui.repartidor.HomeRepartidorActivity.class);
+            } else if ("encargado".equalsIgnoreCase(rol)) {
+                intent = new Intent(WelcomeActivity.this, com.uth.supereconomico.presentation.ui.encargado.HomeEncargadoActivity.class);
+            } else {
+                intent = new Intent(WelcomeActivity.this, com.uth.supereconomico.MainActivity.class);
+            }
+            startActivity(intent);
         } else {
             startActivity(new Intent(WelcomeActivity.this, LoginActivity.class));
         }

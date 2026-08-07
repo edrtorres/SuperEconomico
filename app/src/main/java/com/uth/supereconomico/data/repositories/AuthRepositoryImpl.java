@@ -1,5 +1,6 @@
 package com.uth.supereconomico.data.repositories;
 
+import com.google.gson.Gson;
 import com.uth.supereconomico.data.remote.AuthApi;
 import com.uth.supereconomico.data.remote.SesionSupabase;
 import com.uth.supereconomico.data.remote.SupabaseApi;
@@ -43,8 +44,9 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().getUser() != null) {
                     AuthApi.AuthResponse auth = response.body();
-                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
-                    validarSesionCliente(callback);
+                    String profileJson = auth.getProfile() != null ? new Gson().toJson(auth.getProfile()) : null;
+                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId(), auth.getRol(), profileJson);
+                    validarSesion(callback);
                 } else callback.onError(obtenerDetalleError(response, "Correo/teléfono o contraseña incorrectos"));
             }
             @Override public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) { callback.onError(UserFriendlyError.fromThrowable(t)); }
@@ -58,8 +60,9 @@ public class AuthRepositoryImpl implements AuthRepository {
             public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     AuthApi.AuthResponse auth = response.body();
-                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
-                    validarSesionCliente(callback);
+                    String profileJson = auth.getProfile() != null ? new Gson().toJson(auth.getProfile()) : null;
+                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId(), auth.getRol(), profileJson);
+                    validarSesion(callback);
                 } else if (response.code() == 404 || response.code() == 405) {
                     iniciarSesionConCorreoNativo(email, password, callback);
                 } else {
@@ -83,8 +86,9 @@ public class AuthRepositoryImpl implements AuthRepository {
             public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     AuthApi.AuthResponse auth = response.body();
-                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
-                    validarSesionCliente(callback);
+                    String profileJson = auth.getProfile() != null ? new Gson().toJson(auth.getProfile()) : null;
+                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId(), auth.getRol(), profileJson);
+                    validarSesion(callback);
                 } else {
                     String errorMsg = obtenerDetalleError(response, "Login fallido");
                     RemoteLogger.log("AuthRepositoryImpl", "loginNative", errorMsg, null, null);
@@ -109,7 +113,8 @@ public class AuthRepositoryImpl implements AuthRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     AuthApi.AuthResponse auth = response.body();
                     if (auth.getAccessToken() != null && auth.getUser() != null) {
-                        SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
+                        String profileJson = auth.getProfile() != null ? new Gson().toJson(auth.getProfile()) : null;
+                        SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId(), auth.getRol(), profileJson);
                     }
                     callback.onSuccess(null);
                 } else {
@@ -144,20 +149,16 @@ public class AuthRepositoryImpl implements AuthRepository {
         });
     }
 
-    private void validarSesionCliente(Callback<Usuario> callback) {
+    private void validarSesion(Callback<Usuario> callback) {
         authApi.me().enqueue(new retrofit2.Callback<AuthApi.MeResponse>() {
             @Override
             public void onResponse(Call<AuthApi.MeResponse> call, Response<AuthApi.MeResponse> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().getProfile() != null) {
                     UserDTO dto = response.body().getProfile();
-                    if (!"cliente".equalsIgnoreCase(dto.rol)) {
-                        SesionSupabase.cerrarSesion();
-                        currentUser = null;
-                        if (callback != null) callback.onError("Esta cuenta no pertenece a la app de clientes.");
-                        return;
-                    }
                     currentUser = dto.toDomain();
                     SesionSupabase.actualizarIdUsuario(dto.id);
+                    String profileJson = new Gson().toJson(dto);
+                    SesionSupabase.guardarSesion(SesionSupabase.obtenerTokenAcceso(), null, null, dto.id, dto.rol, profileJson);
                     if (callback != null) callback.onSuccess(currentUser);
                 } else {
                     SesionSupabase.cerrarSesion();

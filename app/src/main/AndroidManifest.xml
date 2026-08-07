@@ -59,6 +59,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity" />
+        <activity android:name=".presentation.ui.repartidor.HomeRepartidorActivity" />
+        <activity android:name=".presentation.ui.repartidor.detalle.DetallePedidoRepartidorActivity" />
+        <activity android:name=".presentation.ui.encargado.HomeEncargadoActivity" />
 
         <activity
             android:name="com.yalantis.ucrop.UCropActivity"

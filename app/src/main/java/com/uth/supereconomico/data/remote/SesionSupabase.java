@@ -19,12 +19,16 @@ public class SesionSupabase {
     private static final String CLAVE_TOKEN_REFRESCO = "token_refresco";
     private static final String CLAVE_EXPIRA_EN = "expira_en";
     private static final String CLAVE_ID_USUARIO = "id_usuario";
+    private static final String CLAVE_ROL = "rol_usuario";
+    private static final String CLAVE_PERFIL = "perfil_usuario";
 
     private static SharedPreferences preferencias;
     private static String tokenAcceso;
     private static String tokenRefresco;
     private static long expiraEn;
     private static String idUsuario;
+    private static String rolUsuario;
+    private static String perfilJson;
 
     private SesionSupabase() {
     }
@@ -37,10 +41,12 @@ public class SesionSupabase {
             tokenRefresco = preferencias.getString(CLAVE_TOKEN_REFRESCO, null);
             expiraEn = preferencias.getLong(CLAVE_EXPIRA_EN, 0L);
             idUsuario = preferencias.getString(CLAVE_ID_USUARIO, null);
+            rolUsuario = preferencias.getString(CLAVE_ROL, null);
+            perfilJson = preferencias.getString(CLAVE_PERFIL, null);
         }
     }
 
-    public static void guardarSesion(String token, String refreshToken, Long expiresIn, String id) {
+    public static void guardarSesion(String token, String refreshToken, Long expiresIn, String id, String rol, String perfil) {
         tokenAcceso = token;
         if (refreshToken != null && !refreshToken.trim().isEmpty()) {
             tokenRefresco = refreshToken;
@@ -49,10 +55,14 @@ public class SesionSupabase {
             expiraEn = System.currentTimeMillis() + (expiresIn * 1000L);
         }
         idUsuario = id;
+        rolUsuario = rol;
+        perfilJson = perfil;
         if (preferencias != null) {
             SharedPreferences.Editor editor = preferencias.edit()
                     .putString(CLAVE_TOKEN_ACCESO, token)
                     .putString(CLAVE_ID_USUARIO, id)
+                    .putString(CLAVE_ROL, rol)
+                    .putString(CLAVE_PERFIL, perfil)
                     .putLong(CLAVE_EXPIRA_EN, expiraEn);
             if (tokenRefresco != null) {
                 editor.putString(CLAVE_TOKEN_REFRESCO, tokenRefresco);
@@ -120,7 +130,9 @@ public class SesionSupabase {
                     json.get("access_token").getAsString(),
                     json.get("refresh_token").getAsString(),
                     json.get("expires_in").getAsLong(),
-                    idUsuario
+                    idUsuario,
+                    rolUsuario,
+                    perfilJson
             );
             return true;
         } catch (Exception ignored) {
@@ -134,6 +146,14 @@ public class SesionSupabase {
         return idUsuario;
     }
 
+    public static String obtenerRol() {
+        return rolUsuario;
+    }
+
+    public static String obtenerPerfilJson() {
+        return perfilJson;
+    }
+
     public static boolean haySesionActiva() {
         return tokenAcceso != null && !tokenAcceso.trim().isEmpty();
     }
@@ -143,6 +163,8 @@ public class SesionSupabase {
         tokenRefresco = null;
         expiraEn = 0L;
         idUsuario = null;
+        rolUsuario = null;
+        perfilJson = null;
         if (preferencias != null) {
             preferencias.edit().clear().apply();
         }
