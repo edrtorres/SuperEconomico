@@ -86,7 +86,7 @@
     </style>
 </head>
 <body class="min-h-screen font-sans text-slate-900">
-    <main id="login-view" class="min-h-screen flex items-center justify-center p-6">
+    <main id="login-view" class="min-h-screen flex items-center justify-center p-6 hidden">
         <section class="neu w-full max-w-md rounded-[2.5rem] p-10">
             <h1 class="text-3xl font-black text-primary text-center">El Económico</h1>
             <p class="text-center text-xs font-bold uppercase tracking-widest text-slate-500 mt-2">Acceso administrativo</p>
@@ -133,7 +133,7 @@
                 <div class="content-wrap">
             <div id="status-card" class="mb-8 p-4 rounded-2xl text-center font-black text-xs uppercase tracking-widest bg-green-100 text-green-700">Sesión administrativa protegida</div>
 
-            <section id="sec-dashboard" class="tab-content"><h2 class="text-3xl font-black mb-2">Resumen operativo</h2><p class="text-slate-500 mb-8">Ventas y proceso completo de entrega</p><div id="dashboard-cards" class="grid grid-cols-2 lg:grid-cols-4 gap-5"></div><div class="neu rounded-3xl p-7 mt-7"><h3 class="font-black text-xl mb-4">Flujo de pedidos</h3><div id="delivery-flow" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div></div></section>
+            <section id="sec-dashboard" class="tab-content hidden"><h2 class="text-3xl font-black mb-2">Resumen operativo</h2><p class="text-slate-500 mb-8">Ventas y proceso completo de entrega</p><div id="dashboard-cards" class="grid grid-cols-2 lg:grid-cols-4 gap-5"></div><div class="neu rounded-3xl p-7 mt-7"><h3 class="font-black text-xl mb-4">Flujo de pedidos</h3><div id="delivery-flow" class="grid grid-cols-2 md:grid-cols-5 gap-4"></div></div></section>
 
             <section id="sec-users" class="tab-content hidden"><div class="flex justify-between items-center mb-8"><div><h2 class="text-3xl font-black">Usuarios</h2><p class="text-slate-500">Clientes, repartidores y usuarios del cPanel</p></div><button onclick="newUser()" class="bg-primary text-white px-8 py-3 rounded-2xl font-bold">+ Crear</button></div><div class="bg-white table-shell"><table class="w-full text-left"><thead><tr><th class="p-5">Nombre</th><th class="p-5">Contacto</th><th class="p-5">Rol</th><th class="p-5">Acción</th></tr></thead><tbody id="table-users"></tbody></table></div></section>
 
@@ -221,6 +221,8 @@
     let realtimeBroadcastChannel = null;
     let realtimeReloadTimer = null;
     let realtimeLastEventAt = null;
+    const adminTabs = ['dashboard', 'users', 'orders', 'cats', 'prods', 'logs', 'apis'];
+    const getSavedTab = () => adminTabs.includes(localStorage.getItem('cpanel_active_tab')) ? localStorage.getItem('cpanel_active_tab') : 'dashboard';
 
     const fail = error => { if (error) throw error; };
     const safe = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -264,6 +266,7 @@
         document.getElementById('login-view').classList.add('hidden');
         document.getElementById('admin-view').classList.remove('hidden');
         await loadData();
+        switchTab(getSavedTab(), false);
         startRealtime(session);
         return true;
     }
@@ -530,7 +533,8 @@
     function editProduct(id) { const item=products.find(value=>value.id===id); if(!item)return; document.getElementById('prod-id').value=item.id; document.getElementById('prod-name').value=item.nombre; document.getElementById('prod-desc').value=item.descripcion||''; document.getElementById('prod-cat').value=item.categoria_id; document.getElementById('prod-price').value=item.precio; document.getElementById('prod-is-offer').checked=!!item.es_oferta; document.getElementById('prod-price-offer').value=item.precio_oferta||''; openMod('modal-prod'); }
     function openMod(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeMod() { document.querySelectorAll('.fixed').forEach(modal=>modal.classList.add('hidden')); document.getElementById('p-loader').classList.add('hidden'); }
-    function switchTab(tab) {
+    function switchTab(tab, persist = true) {
+        if (!adminTabs.includes(tab)) tab = 'dashboard';
         document.querySelectorAll('.tab-content').forEach(section => section.classList.add('hidden'));
         document.getElementById(`sec-${tab}`).classList.remove('hidden');
         document.querySelectorAll('.side-link').forEach(button => button.classList.remove('active'));
@@ -538,6 +542,7 @@
         if (active) active.classList.add('active');
         const labels = { dashboard:'Dashboard', users:'Usuarios', orders:'Pedidos', cats:'Categorías', prods:'Productos', logs:'Log de errores', apis:'APIs' };
         document.getElementById('page-title').textContent = labels[tab] || 'Panel';
+        if (persist) localStorage.setItem('cpanel_active_tab', tab);
         if (tab === 'logs') loadLogs();
     }
 
