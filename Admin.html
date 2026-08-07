@@ -62,7 +62,8 @@
         .orders-tabpage { border-radius:0 0 18px 18px!important; }
         .order-detail-line { border-bottom:1px solid rgba(100,116,139,.14); }
         .order-detail-line:last-child { border-bottom:0; }
-        .delivery-map { width:100%; min-height:240px; border:0; border-radius:18px; background:#eef2f7; }
+        .delivery-map { width:100%; height:190px; border:0; border-radius:16px; background:#eef2f7; }
+        .order-detail-products { max-height:285px; overflow-y:auto; }
         .main-panel { min-width:0; display:flex; flex-direction:column; }
         .topbar { min-height:72px; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 28px; background:rgba(230,231,238,.88); backdrop-filter:blur(14px); border-bottom:1px solid rgba(100,116,139,.18); position:sticky; top:0; z-index:20; }
         .page-kicker { color:var(--muted); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.12em; }
@@ -187,22 +188,24 @@
     <div id="modal-user" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50"><div class="bg-white rounded-[2.5rem] w-full max-w-md p-9"><h3 class="text-2xl font-black mb-5 text-primary">Usuario</h3><form id="user-form" class="space-y-4"><input type="hidden" id="user-id"><input id="user-name" required class="w-full p-4 rounded-2xl" placeholder="Nombre completo"><input id="user-email" type="email" required class="w-full p-4 rounded-2xl" placeholder="Correo"><input id="user-phone" required class="w-full p-4 rounded-2xl" placeholder="Teléfono"><input id="user-password" type="password" minlength="6" class="w-full p-4 rounded-2xl" placeholder="Contraseña (mínimo 6)"><select id="user-role" class="w-full p-4 rounded-2xl"><option value="cliente">Cliente</option><option value="repartidor">Repartidor</option><option value="encargado">Usuario cPanel</option></select><div class="flex gap-3"><button class="flex-1 bg-primary text-white py-4 rounded-2xl font-bold">Guardar</button><button type="button" onclick="closeMod()" class="flex-1 py-4 rounded-2xl font-bold">Cerrar</button></div></form></div></div>
 
     <div id="modal-order" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-[2.5rem] w-full max-w-3xl p-8 max-h-[90vh] overflow-y-auto">
-            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+        <div class="bg-white rounded-[2rem] w-full max-w-6xl p-5 max-h-[94vh] overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
                 <div>
                     <p class="text-xs font-black uppercase tracking-widest text-slate-500">Detalle del pedido</p>
-                    <h3 id="order-detail-title" class="text-3xl font-black text-primary mt-1">Orden</h3>
+                    <h3 id="order-detail-title" class="text-2xl font-black text-primary mt-1">Orden</h3>
                     <p id="order-detail-client" class="text-sm font-bold text-slate-500 mt-1"></p>
                 </div>
                 <button type="button" onclick="closeMod()" class="icon-btn" title="Cerrar" aria-label="Cerrar"><i data-lucide="x"></i></button>
             </div>
-            <div id="order-detail-meta" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
-            <div id="order-detail-address" class="neu rounded-3xl p-5 mb-6"></div>
-            <div id="order-detail-items" class="neu rounded-3xl p-4"></div>
-            <div class="flex justify-end mt-6">
-                <div class="min-w-60 neu rounded-3xl p-5 text-right">
+            <div id="order-detail-meta" class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div id="order-detail-address" class="neu rounded-3xl p-4"></div>
+                <div class="flex flex-col gap-4 min-h-0">
+                    <div id="order-detail-items" class="neu rounded-3xl p-3 order-detail-products"></div>
+                    <div class="neu rounded-3xl p-4 text-right">
                     <p class="text-xs font-black uppercase tracking-widest text-slate-500">Total</p>
-                    <p id="order-detail-total" class="text-3xl font-black text-primary mt-1">L. 0.00</p>
+                        <p id="order-detail-total" class="text-2xl font-black text-primary mt-1">L. 0.00</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -493,9 +496,9 @@
         const formatted = formatAddress(address);
         const coords = addressCoords(address);
         const map = coords
-            ? `<iframe class="delivery-map mt-4" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.01}%2C${coords.lat - 0.01}%2C${coords.lng + 0.01}%2C${coords.lat + 0.01}&layer=mapnik&marker=${coords.lat}%2C${coords.lng}"></iframe><a class="inline-block mt-3 text-primary text-xs font-black uppercase tracking-widest" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=16/${coords.lat}/${coords.lng}">Abrir mapa</a>`
-            : '<div class="mt-4 p-5 rounded-2xl bg-slate-100 text-slate-500 font-bold text-sm">Esta dirección no tiene coordenadas para mostrar mapa.</div>';
-        return `<p class="text-xs font-black uppercase tracking-widest text-slate-500">Dirección de entrega</p><h4 class="text-xl font-black mt-1">${safe(formatted.title)}</h4><p class="text-sm font-bold text-slate-600 mt-2">${safe(formatted.detail || 'Sin detalle registrado')}</p>${map}`;
+            ? `<iframe class="delivery-map mt-3" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.01}%2C${coords.lat - 0.01}%2C${coords.lng + 0.01}%2C${coords.lat + 0.01}&layer=mapnik&marker=${coords.lat}%2C${coords.lng}"></iframe><a class="inline-block mt-2 text-primary text-xs font-black uppercase tracking-widest" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=16/${coords.lat}/${coords.lng}">Abrir mapa</a>`
+            : '<div class="mt-3 p-4 rounded-2xl bg-slate-100 text-slate-500 font-bold text-sm">Esta dirección no tiene coordenadas para mostrar mapa.</div>';
+        return `<p class="text-xs font-black uppercase tracking-widest text-slate-500">Dirección de entrega</p><h4 class="text-lg font-black mt-1">${safe(formatted.title)}</h4><p class="text-sm font-bold text-slate-600 mt-1">${safe(formatted.detail || 'Sin detalle registrado')}</p>${map}`;
     }
 
     function openOrderDetail(id) {
@@ -512,10 +515,9 @@
             ['Estado', order.estado || 'Pendiente'],
             ['Repartidor', driver?.nombre_completo || driver?.email || 'Sin asignar'],
             ['Pago', order.metodo_pago || 'No indicado'],
-            ['Dirección', address.detail ? `${address.title}: ${address.detail}` : address.title],
             ['Fecha', orderDate(order)],
             ['Productos', items.length]
-        ].map(([label, value]) => `<div class="neu rounded-2xl p-4"><p class="text-xs font-black uppercase tracking-widest text-slate-500">${safe(label)}</p><p class="font-black mt-1">${safe(value)}</p></div>`).join('');
+        ].map(([label, value]) => `<div class="neu rounded-2xl p-3"><p class="text-[10px] font-black uppercase tracking-widest text-slate-500">${safe(label)}</p><p class="font-black mt-1 text-sm">${safe(value)}</p></div>`).join('');
         document.getElementById('order-detail-address').innerHTML = renderDeliveryAddress(deliveryAddress);
         document.getElementById('order-detail-items').innerHTML = items.length ? items.map(item => {
             const product = products.find(value => String(value.id) === String(item.producto_id));
@@ -524,8 +526,8 @@
             const quantity = Number(item.cantidad || 0);
             const price = Number(item.precio_unitario || product?.precio || 0);
             const subtotal = quantity * price;
-            return `<div class="order-detail-line flex items-center gap-4 py-4">
-                <img src="${safe(imageSource(image))}" alt="" class="w-16 h-16 rounded-2xl object-cover bg-slate-100">
+            return `<div class="order-detail-line flex items-center gap-3 py-3">
+                <img src="${safe(imageSource(image))}" alt="" class="w-12 h-12 rounded-2xl object-cover bg-slate-100">
                 <div class="flex-1 min-w-0"><p class="font-black">${safe(name)}</p><p class="text-xs font-bold text-slate-500">Cantidad: ${safe(quantity)} - Precio: L. ${price.toFixed(2)}</p></div>
                 <div class="font-black text-primary">L. ${subtotal.toFixed(2)}</div>
             </div>`;
