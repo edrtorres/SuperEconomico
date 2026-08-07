@@ -51,6 +51,11 @@
         .api-frame { width:100%; min-height:72vh; border:0; border-radius:18px; background:white; }
         .logout-link { color:#b91c1c; }
         .logout-link:hover { background:#fee2e2; color:#991b1b; }
+        .order-row { cursor:pointer; border-bottom:1px solid rgba(100,116,139,.14); }
+        .order-row:hover { background:rgba(49,120,50,.06); }
+        .order-row select { cursor:pointer; }
+        .order-detail-line { border-bottom:1px solid rgba(100,116,139,.14); }
+        .order-detail-line:last-child { border-bottom:0; }
         .main-panel { min-width:0; display:flex; flex-direction:column; }
         .topbar { min-height:72px; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 28px; background:rgba(230,231,238,.88); backdrop-filter:blur(14px); border-bottom:1px solid rgba(100,116,139,.18); position:sticky; top:0; z-index:20; }
         .page-kicker { color:var(--muted); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.12em; }
@@ -168,6 +173,27 @@
 
     <div id="modal-user" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50"><div class="bg-white rounded-[2.5rem] w-full max-w-md p-9"><h3 class="text-2xl font-black mb-5 text-primary">Usuario</h3><form id="user-form" class="space-y-4"><input type="hidden" id="user-id"><input id="user-name" required class="w-full p-4 rounded-2xl" placeholder="Nombre completo"><input id="user-email" type="email" required class="w-full p-4 rounded-2xl" placeholder="Correo"><input id="user-phone" required class="w-full p-4 rounded-2xl" placeholder="Teléfono"><input id="user-password" type="password" minlength="6" class="w-full p-4 rounded-2xl" placeholder="Contraseña (mínimo 6)"><select id="user-role" class="w-full p-4 rounded-2xl"><option value="cliente">Cliente</option><option value="repartidor">Repartidor</option><option value="encargado">Usuario cPanel</option></select><div class="flex gap-3"><button class="flex-1 bg-primary text-white py-4 rounded-2xl font-bold">Guardar</button><button type="button" onclick="closeMod()" class="flex-1 py-4 rounded-2xl font-bold">Cerrar</button></div></form></div></div>
 
+    <div id="modal-order" class="fixed inset-0 bg-slate-900/70 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-3xl p-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+                <div>
+                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Detalle del pedido</p>
+                    <h3 id="order-detail-title" class="text-3xl font-black text-primary mt-1">Orden</h3>
+                    <p id="order-detail-client" class="text-sm font-bold text-slate-500 mt-1"></p>
+                </div>
+                <button type="button" onclick="closeMod()" class="icon-btn" title="Cerrar" aria-label="Cerrar"><i data-lucide="x"></i></button>
+            </div>
+            <div id="order-detail-meta" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"></div>
+            <div id="order-detail-items" class="neu rounded-3xl p-4"></div>
+            <div class="flex justify-end mt-6">
+                <div class="min-w-60 neu rounded-3xl p-5 text-right">
+                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Total</p>
+                    <p id="order-detail-total" class="text-3xl font-black text-primary mt-1">L. 0.00</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <script>
     const SUPABASE_URL = 'https://mvrlcbcydpubhovvrmvf.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12cmxjYmN5ZHB1YmhvdnZybXZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NDA3OTAsImV4cCI6MjA5ODMxNjc5MH0.rNQq1xOA5zGJpMiHlhsXKw5lWLg49qYUtDSC9M7Iha8';
@@ -175,6 +201,7 @@
     let categories = [];
     let products = [];
     let orders = [];
+    let orderItems = [];
     let users = [];
     let adminErrors = [];
     let realtimeChannel = null;
@@ -312,14 +339,15 @@
 
     async function loadData(options = {}) {
         try {
-            const [catResult, productResult, orderResult, userResult] = await Promise.all([
+            const [catResult, productResult, orderResult, itemResult, userResult] = await Promise.all([
                 db.from('categorias').select('*').order('nombre'),
                 db.from('productos').select('*').order('nombre'),
                 db.from('pedidos').select('*').order('id', { ascending:false }),
+                db.from('pedido_items').select('*').order('id', { ascending:true }),
                 db.functions.invoke('admin-users', { body:{ action:'list' } })
             ]);
-            fail(catResult.error); fail(productResult.error); fail(orderResult.error); fail(userResult.error);
-            categories = catResult.data || []; products = productResult.data || []; orders = orderResult.data || []; users = userResult.data?.users || [];
+            fail(catResult.error); fail(productResult.error); fail(orderResult.error); fail(itemResult.error); fail(userResult.error);
+            categories = catResult.data || []; products = productResult.data || []; orders = orderResult.data || []; orderItems = itemResult.data || []; users = userResult.data?.users || [];
             renderOrders(); renderCategories(); renderProducts(); renderUsers(); renderDashboard(); renderLogs(); renderIcons();
             if (!options.silent) setStatus('Datos sincronizados correctamente');
         } catch (error) {
@@ -355,12 +383,55 @@
         document.getElementById('no-orders').classList.toggle('hidden', orders.length > 0);
         for (const order of orders) {
             const row = document.createElement('tr');
+            row.className = 'order-row';
             const drivers = users.filter(u => u.rol === 'repartidor').map(u => `<option value="${safe(u.id)}">${safe(u.nombre_completo || u.email)}</option>`).join('');
             const client = users.find(u => u.id === order.perfil_id);
             row.innerHTML = `<td class="p-6 font-bold">ORDEN #${safe(order.id)}<div class="text-xs text-slate-500">${safe(client?.nombre_completo || client?.email || 'Cliente')}</div></td><td class="p-6 font-black text-primary">L. ${Number(order.total).toFixed(2)}</td><td class="p-6"><select class="driver p-2 rounded-xl"><option value="">Sin asignar</option>${drivers}</select></td><td class="p-6"><select class="order-status p-2 rounded-xl"><option value="pendiente">Pendiente</option><option value="preparando">Preparando</option><option value="en_camino">En camino</option><option value="entregado">Entregado</option><option value="cancelado">Cancelado</option></select></td>`;
-            const status = row.querySelector('.order-status'), driver = row.querySelector('.driver'); status.value = order.estado; driver.value = order.repartidor_id || ''; status.addEventListener('change', () => updateOrder(order.id, {estado:status.value})); driver.addEventListener('change', () => updateOrder(order.id, {repartidor_id:driver.value || null}));
+            row.addEventListener('click', () => openOrderDetail(order.id));
+            const status = row.querySelector('.order-status'), driver = row.querySelector('.driver'); status.value = order.estado; driver.value = order.repartidor_id || ''; status.addEventListener('click', event => event.stopPropagation()); driver.addEventListener('click', event => event.stopPropagation()); status.addEventListener('change', () => updateOrder(order.id, {estado:status.value})); driver.addEventListener('change', () => updateOrder(order.id, {repartidor_id:driver.value || null}));
             body.appendChild(row);
         }
+    }
+
+    function orderDate(order) {
+        const raw = order.creado_at || order.created_at || order.fecha || order.updated_at;
+        if (!raw) return 'Sin fecha';
+        const date = new Date(raw);
+        return Number.isNaN(date.getTime()) ? raw : date.toLocaleString();
+    }
+
+    function openOrderDetail(id) {
+        const order = orders.find(item => String(item.id) === String(id));
+        if (!order) return;
+        const client = users.find(u => u.id === order.perfil_id);
+        const driver = users.find(u => u.id === order.repartidor_id);
+        const items = orderItems.filter(item => String(item.pedido_id) === String(order.id));
+        document.getElementById('order-detail-title').textContent = `Orden #${order.id}`;
+        document.getElementById('order-detail-client').textContent = client ? `${client.nombre_completo || client.email} - ${client.telefono || 'Sin telefono'}` : 'Cliente no encontrado';
+        document.getElementById('order-detail-meta').innerHTML = [
+            ['Estado', order.estado || 'Pendiente'],
+            ['Repartidor', driver?.nombre_completo || driver?.email || 'Sin asignar'],
+            ['Pago', order.metodo_pago || 'No indicado'],
+            ['Direccion ID', order.direccion_id || 'No indicada'],
+            ['Fecha', orderDate(order)],
+            ['Productos', items.length]
+        ].map(([label, value]) => `<div class="neu rounded-2xl p-4"><p class="text-xs font-black uppercase tracking-widest text-slate-500">${safe(label)}</p><p class="font-black mt-1">${safe(value)}</p></div>`).join('');
+        document.getElementById('order-detail-items').innerHTML = items.length ? items.map(item => {
+            const product = products.find(value => String(value.id) === String(item.producto_id));
+            const name = item.nombre || product?.nombre || `Producto #${item.producto_id || ''}`;
+            const image = item.imagen_url || product?.imagen_url || '';
+            const quantity = Number(item.cantidad || 0);
+            const price = Number(item.precio_unitario || product?.precio || 0);
+            const subtotal = quantity * price;
+            return `<div class="order-detail-line flex items-center gap-4 py-4">
+                <img src="${safe(imageSource(image))}" alt="" class="w-16 h-16 rounded-2xl object-cover bg-slate-100">
+                <div class="flex-1 min-w-0"><p class="font-black">${safe(name)}</p><p class="text-xs font-bold text-slate-500">Cantidad: ${safe(quantity)} - Precio: L. ${price.toFixed(2)}</p></div>
+                <div class="font-black text-primary">L. ${subtotal.toFixed(2)}</div>
+            </div>`;
+        }).join('') : '<div class="p-8 text-center text-slate-400 font-black">Este pedido no tiene productos registrados</div>';
+        document.getElementById('order-detail-total').textContent = `L. ${Number(order.total || 0).toFixed(2)}`;
+        openMod('modal-order');
+        renderIcons();
     }
 
     function renderCategories() {
