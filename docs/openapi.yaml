@@ -50,6 +50,18 @@ components:
             id: {type: string, format: uuid}
             email: {type: string}
 
+    MeResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id: {type: string, format: uuid}
+            email: {type: string}
+        profile:
+          $ref: "#/components/schemas/Perfil"
+        rol: {type: string, enum: [cliente, repartidor, encargado]}
+
     VerifyOtpRequest:
       type: object
       properties:
@@ -235,6 +247,20 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/AuthResponse"}
+
+  /functions/v1/me:
+    get:
+      summary: Perfil de sesion autenticada
+      description: Devuelve el usuario autenticado, su perfil y rol para decidir si puede entrar a la app cliente, app repartidor o cPanel.
+      tags: [Autenticacion]
+      responses:
+        "200":
+          description: Perfil autenticado con rol
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/MeResponse"}
+        "401": {description: Sesion invalida}
+        "404": {description: Perfil no encontrado}
 
   /auth/v1/verify:
     post:
