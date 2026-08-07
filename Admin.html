@@ -179,6 +179,7 @@
     let adminErrors = [];
     let realtimeChannel = null;
     let realtimeReloadTimer = null;
+    let realtimeLastEventAt = null;
 
     const fail = error => { if (error) throw error; };
     const safe = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -249,6 +250,8 @@
     async function logout() { stopRealtime(); await db.auth.signOut({ scope:'local' }); showLogin(); }
 
     function scheduleRealtimeReload(source) {
+        realtimeLastEventAt = new Date();
+        console.info('Realtime event received:', source, realtimeLastEventAt.toISOString());
         if (realtimeReloadTimer) clearTimeout(realtimeReloadTimer);
         realtimeReloadTimer = setTimeout(async () => {
             realtimeReloadTimer = null;
@@ -260,11 +263,14 @@
     function startRealtime(session) {
         if (realtimeChannel) return;
         if (session?.access_token && db.realtime?.setAuth) db.realtime.setAuth(session.access_token);
-        realtimeChannel = db.channel('cpanel-pedidos-dashboard')
-            .on('postgres_changes', { event:'*', schema:'public', table:'pedidos' }, () => scheduleRealtimeReload('Pedidos'))
+        realtimeChannel = db.channel('cpanel-pedidos-dashboard', { config:{ private:false } })
+            .on('postgres_changes', { event:'INSERT', schema:'public', table:'pedidos' }, payload => scheduleRealtimeReload(`Pedido nuevo #${payload.new?.id || ''}`))
+            .on('postgres_changes', { event:'UPDATE', schema:'public', table:'pedidos' }, payload => scheduleRealtimeReload(`Pedido actualizado #${payload.new?.id || ''}`))
+            .on('postgres_changes', { event:'DELETE', schema:'public', table:'pedidos' }, () => scheduleRealtimeReload('Pedido eliminado'))
             .on('postgres_changes', { event:'*', schema:'public', table:'pedido_items' }, () => scheduleRealtimeReload('Detalle de pedidos'))
             .subscribe(status => {
-                if (status === 'SUBSCRIBED') setStatus('Panel en tiempo real activo');
+                console.info('Realtime status:', status);
+                if (status === 'SUBSCRIBED') setStatus('Panel en tiempo real activo. Esperando eventos de pedidos.');
                 if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
                     logError('Tiempo real', 'No se pudo activar la actualización automática');
                     stopRealtime();
