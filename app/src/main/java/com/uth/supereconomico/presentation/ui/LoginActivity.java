@@ -60,12 +60,17 @@ public class LoginActivity extends AppCompatActivity {
     private void observarViewModel() {
         viewModel.user.observe(this, usuario -> {
             Toast.makeText(LoginActivity.this, "Bienvenido, " + usuario.getNombreCompleto(), Toast.LENGTH_SHORT).show();
-            if (usuario.getRol() == com.uth.supereconomico.domain.entities.Usuario.Rol.ENCARGADO) {
-                Toast.makeText(this, "La cuenta administrativa se usa en el cPanel", Toast.LENGTH_LONG).show();
-                com.uth.supereconomico.data.remote.SesionSupabase.cerrarSesion();
-                return;
+            
+            Intent intent;
+            if (usuario.getRol() == com.uth.supereconomico.domain.entities.Usuario.Rol.REPARTIDOR) {
+                intent = new Intent(LoginActivity.this, com.uth.supereconomico.presentation.ui.repartidor.HomeRepartidorActivity.class);
+            } else if (usuario.getRol() == com.uth.supereconomico.domain.entities.Usuario.Rol.ENCARGADO) {
+                intent = new Intent(LoginActivity.this, com.uth.supereconomico.presentation.ui.encargado.HomeEncargadoActivity.class);
+            } else {
+                intent = new Intent(LoginActivity.this, MainActivity.class);
             }
-            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+            
+            startActivity(intent);
             finishAffinity();
         });
 

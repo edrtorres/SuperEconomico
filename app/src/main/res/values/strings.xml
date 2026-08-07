@@ -39,4 +39,11 @@
     <string name="error_empty_fields">Por favor, completa todos los campos.</string>
     <string name="error_invalid_email">Correo electrónico no válido.</string>
     <string name="error_auth_failed">Error de autenticación. Intenta de nuevo.</string>
+    <string name="back_description">Regresar</string>
+    <string name="reset_password_title">Nueva contraseña</string>
+    <string name="confirm_password_hint">Confirmar contraseña</string>
+    <string name="reset_password_action">Restablecer contraseña</string>
+    <string name="forgot_password_title">Recuperar contraseña</string>
+    <string name="forgot_password_instruction">Ingresa tu correo para recibir instrucciones</string>
+    <string name="send_instructions_action">Enviar instrucciones</string>
 </resources>
