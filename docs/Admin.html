@@ -205,6 +205,7 @@
     let users = [];
     let adminErrors = [];
     let realtimeChannel = null;
+    let realtimeBroadcastChannel = null;
     let realtimeReloadTimer = null;
     let realtimeLastEventAt = null;
 
@@ -288,8 +289,20 @@
     }
 
     function startRealtime(session) {
-        if (realtimeChannel) return;
+        if (realtimeChannel || realtimeBroadcastChannel) return;
         if (session?.access_token && db.realtime?.setAuth) db.realtime.setAuth(session.access_token);
+        realtimeBroadcastChannel = db.channel('cpanel:pedidos', { config:{ private:true } })
+            .on('broadcast', { event:'INSERT' }, payload => scheduleRealtimeReload(`Pedido nuevo #${payload.payload?.record?.id || ''}`))
+            .on('broadcast', { event:'UPDATE' }, payload => scheduleRealtimeReload(`Pedido actualizado #${payload.payload?.record?.id || ''}`))
+            .on('broadcast', { event:'DELETE' }, () => scheduleRealtimeReload('Pedido eliminado'))
+            .subscribe(status => {
+                console.info('Realtime broadcast status:', status);
+                if (status === 'SUBSCRIBED') setStatus('Panel en tiempo real activo. Esperando eventos de pedidos.');
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    logError('Tiempo real', 'No se pudo activar el canal de pedidos en vivo');
+                    stopRealtime();
+                }
+            });
         realtimeChannel = db.channel('cpanel-pedidos-dashboard', { config:{ private:false } })
             .on('postgres_changes', { event:'INSERT', schema:'public', table:'pedidos' }, payload => scheduleRealtimeReload(`Pedido nuevo #${payload.new?.id || ''}`))
             .on('postgres_changes', { event:'UPDATE', schema:'public', table:'pedidos' }, payload => scheduleRealtimeReload(`Pedido actualizado #${payload.new?.id || ''}`))
@@ -313,6 +326,10 @@
         if (realtimeChannel) {
             db.removeChannel(realtimeChannel);
             realtimeChannel = null;
+        }
+        if (realtimeBroadcastChannel) {
+            db.removeChannel(realtimeBroadcastChannel);
+            realtimeBroadcastChannel = null;
         }
     }
 
