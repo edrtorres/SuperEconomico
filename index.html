@@ -59,11 +59,16 @@ components:
       type: object
       properties:
         access_token: {type: string}
+        refresh_token: {type: string}
+        expires_in: {type: integer}
         user:
           type: object
           properties:
             id: {type: string, format: uuid}
             email: {type: string}
+        profile:
+          $ref: "#/components/schemas/Perfil"
+        rol: {type: string, enum: [cliente, repartidor, encargado]}
 
     MeResponse:
       type: object
@@ -237,14 +242,10 @@ paths:
       responses:
         "200": {description: Éxito}
 
-  /auth/v1/token:
+  /functions/v1/login:
     post:
-      summary: Login (Email/Teléfono + Contraseña)
+      summary: Login por correo y contrasena
       tags: [Autenticacion]
-      parameters:
-        - in: query
-          name: grant_type
-          schema: {type: string, default: password}
       requestBody:
         content:
           application/json:
@@ -255,10 +256,24 @@ paths:
                 password: {type: string}
       responses:
         "200":
-          description: Login exitoso
+          description: Login exitoso con perfil y rol
           content:
             application/json:
               schema: {$ref: "#/components/schemas/AuthResponse"}
+              example:
+                access_token: "string"
+                refresh_token: "string"
+                expires_in: 3600
+                user:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  email: "cliente@correo.com"
+                profile:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  email: "cliente@correo.com"
+                  nombre_completo: "Cliente Ejemplo"
+                  telefono: "99999999"
+                  rol: "cliente"
+                rol: "cliente"
 
   /functions/v1/login-by-phone:
     post:
@@ -270,10 +285,24 @@ paths:
             schema: {$ref: "#/components/schemas/PhoneLoginRequest"}
       responses:
         "200":
-          description: Login exitoso
+          description: Login exitoso con perfil y rol
           content:
             application/json:
               schema: {$ref: "#/components/schemas/AuthResponse"}
+              example:
+                access_token: "string"
+                refresh_token: "string"
+                expires_in: 3600
+                user:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  email: "cliente@correo.com"
+                profile:
+                  id: "123e4567-e89b-12d3-a456-426614174000"
+                  email: "cliente@correo.com"
+                  nombre_completo: "Cliente Ejemplo"
+                  telefono: "99999999"
+                  rol: "cliente"
+                rol: "cliente"
 
   /functions/v1/me:
     get:

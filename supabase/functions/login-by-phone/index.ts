@@ -13,13 +13,17 @@ Deno.serve(async (req) => {
 
     const url = Deno.env.get("SUPABASE_URL")!;
     const service = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-    const { data: profile } = await service.from("perfiles").select("email").eq("telefono_normalizado", normalized).maybeSingle();
+    const { data: profile } = await service
+      .from("perfiles")
+      .select("id,email,nombre_completo,telefono,rol,avatar_url,descripcion,latitud,longitud,direccion")
+      .eq("telefono_normalizado", normalized)
+      .maybeSingle();
     if (!profile?.email) return json({ error: "Correo/teléfono o contraseña incorrectos" }, 401);
 
     const publicClient = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, { auth: { persistSession: false } });
     const { data, error } = await publicClient.auth.signInWithPassword({ email: profile.email, password });
     if (error || !data.session) return json({ error: "Correo/teléfono o contraseña incorrectos" }, 401);
-    return json({ ...data.session, user: data.user });
+    return json({ ...data.session, user: data.user, profile, rol: profile.rol ?? null });
   } catch {
     return json({ error: "No se pudo iniciar sesión" }, 500);
   }

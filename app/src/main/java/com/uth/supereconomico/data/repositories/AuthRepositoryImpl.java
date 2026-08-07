@@ -61,6 +61,8 @@ public class AuthRepositoryImpl implements AuthRepository {
                     AuthApi.AuthResponse auth = response.body();
                     SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
                     validarSesionCliente(callback);
+                } else if (response.code() == 404 || response.code() == 405) {
+                    iniciarSesionConCorreoNativo(email, password, callback);
                 } else {
                     String errorMsg = obtenerDetalleError(response, "Login fallido");
                     RemoteLogger.log("AuthRepositoryImpl", "login", errorMsg, null, null);
@@ -71,6 +73,29 @@ public class AuthRepositoryImpl implements AuthRepository {
             @Override
             public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) {
                 RemoteLogger.log("AuthRepositoryImpl", "login", "Fallo de red", t, null);
+                callback.onError(UserFriendlyError.fromThrowable(t));
+            }
+        });
+    }
+
+    private void iniciarSesionConCorreoNativo(String email, String password, Callback<Usuario> callback) {
+        authApi.loginNative(new AuthApi.LoginRequest(email, password)).enqueue(new retrofit2.Callback<AuthApi.AuthResponse>() {
+            @Override
+            public void onResponse(Call<AuthApi.AuthResponse> call, Response<AuthApi.AuthResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    AuthApi.AuthResponse auth = response.body();
+                    SesionSupabase.guardarSesion(auth.getAccessToken(), auth.getRefreshToken(), auth.getExpiresIn(), auth.getUser().getId());
+                    validarSesionCliente(callback);
+                } else {
+                    String errorMsg = obtenerDetalleError(response, "Login fallido");
+                    RemoteLogger.log("AuthRepositoryImpl", "loginNative", errorMsg, null, null);
+                    callback.onError(errorMsg);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<AuthApi.AuthResponse> call, Throwable t) {
+                RemoteLogger.log("AuthRepositoryImpl", "loginNative", "Fallo de red", t, null);
                 callback.onError(UserFriendlyError.fromThrowable(t));
             }
         });

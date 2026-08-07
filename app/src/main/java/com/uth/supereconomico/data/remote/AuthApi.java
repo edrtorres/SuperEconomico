@@ -16,8 +16,11 @@ public interface AuthApi {
     @POST("auth/v1/signup")
     Call<AuthResponse> signUp(@Query("redirect_to") String redirectTo, @Body SignUpRequest request);
 
-    @POST("auth/v1/token?grant_type=password")
+    @POST("functions/v1/login")
     Call<AuthResponse> login(@Body LoginRequest request);
+
+    @POST("auth/v1/token?grant_type=password")
+    Call<AuthResponse> loginNative(@Body LoginRequest request);
 
     @POST("functions/v1/login-by-phone")
     Call<AuthResponse> loginByPhone(@Body PhoneLoginRequest request);
@@ -132,11 +135,15 @@ public interface AuthApi {
         Long expiresIn;
         @SerializedName("user")
         UserResponse user;
+        com.uth.supereconomico.data.remote.models.UserDTO profile;
+        String rol;
 
         public String getAccessToken() { return accessToken; }
         public String getRefreshToken() { return refreshToken; }
         public Long getExpiresIn() { return expiresIn; }
         public UserResponse getUser() { return user; }
+        public com.uth.supereconomico.data.remote.models.UserDTO getProfile() { return profile; }
+        public String getRol() { return rol; }
     }
 
     class UserResponse {
