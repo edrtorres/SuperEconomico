@@ -163,9 +163,12 @@ begin
        or new.metodo_pago is distinct from old.metodo_pago then
       raise exception 'El repartidor solo puede cambiar el estado';
     end if;
-    if not ((old.estado = 'preparando' and new.estado = 'en_camino')
-         or (old.estado = 'en_camino' and new.estado = 'entregado')
-         or old.estado = new.estado) then
+    if not (
+      (old.estado = 'preparando' and new.estado = 'en_camino')
+      or (old.estado = 'preparando' and new.estado = 'entregado')
+      or (old.estado = 'en_camino' and new.estado = 'entregado')
+      or old.estado = new.estado
+    ) then
       raise exception 'Cambio de estado no permitido para repartidor';
     end if;
   end if;
@@ -184,6 +187,34 @@ revoke all on function private.validar_cambio_pedido() from public, anon, authen
 drop trigger if exists tr_validar_cambio_pedido on public.pedidos;
 create trigger tr_validar_cambio_pedido before update on public.pedidos
 for each row execute function private.validar_cambio_pedido();
+
+create or replace function public.repartidor_marcar_entregado(
+  p_pedido_id bigint
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not (select private.tiene_rol('repartidor')) then
+    raise exception 'No tiene permiso para actualizar pedidos';
+  end if;
+
+  update public.pedidos
+  set estado = 'entregado',
+      entregado_at = now()
+  where id = p_pedido_id
+    and repartidor_id = (select auth.uid())
+    and estado in ('preparando', 'en_camino');
+
+  if not found then
+    raise exception 'No se pudo marcar el pedido como entregado';
+  end if;
+end;
+$$;
+revoke all on function public.repartidor_marcar_entregado(bigint) from public, anon;
+grant execute on function public.repartidor_marcar_entregado(bigint) to authenticated;
 
 grant select on public.perfiles, public.pedidos, public.pedido_items, public.direcciones to authenticated;
 grant update (estado) on public.pedidos to authenticated;
